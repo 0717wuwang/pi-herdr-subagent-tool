@@ -1,0 +1,9 @@
+node_modules/
+config.json
+.reviews/
+.pi/*
+!.pi/skills/
+!.pi/settings.json
+.pi-lens-probe-home/
+temp
+nul

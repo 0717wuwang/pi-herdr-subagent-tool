@@ -1,0 +1,82 @@
+{
+  "name": "pi-herdr-subagent-tool",
+  "version": "4.0.0",
+  "description": "Asynchronous Pi subagents in Herdr, with optional isolated Git worktrees",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "herdr",
+    "subagents",
+    "agents",
+    "worktrees",
+    "orchestration"
+  ],
+  "license": "MIT",
+  "files": [
+    "pi-extension/",
+    "maestro/",
+    "plugins/",
+    "skills/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "config.json.example"
+  ],
+  "author": {
+    "name": "Giuseppe Rodriguez",
+    "url": "https://github.com/0717wuwang"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0717wuwang/pi-herdr-subagent-tool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/0717wuwang/pi-herdr-subagent-tool/issues"
+  },
+  "homepage": "https://github.com/0717wuwang/pi-herdr-subagent-tool#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "scripts": {
+    "changelog": "auto-changelog",
+    "format": "biome format --write pi-extension test maestro plugins",
+    "format:check": "biome format pi-extension test maestro plugins",
+    "lint": "./node_modules/.bin/oxlint pi-extension test maestro plugins",
+    "test": "node --experimental-strip-types --test test/test.ts test/worktree-cleanup.test.ts test/launch.test.ts test/runtime-routing.test.ts test/release-workflow.test.ts test/package-manifest.test.js test/sidebar-plugin.test.js test/maestro/*.test.ts",
+    "test:integration": "node --experimental-strip-types --test --test-concurrency=1 test/integration/*.test.ts",
+    "test:integration:live": "PI_TEST_LIVE=1 node --experimental-strip-types --test --test-concurrency=1 test/integration/*.test.ts",
+    "version": "auto-changelog --package && git add CHANGELOG.md"
+  },
+  "auto-changelog": {
+    "commitLimit": false,
+    "template": "keepachangelog",
+    "unreleased": true
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "@sinclair/typebox": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./pi-extension/subagents/index.ts"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "image": "https://raw.githubusercontent.com/0717wuwang/pi-herdr-subagent-tool/main/docs/assets/pi-herdr-agents-gallery.png"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.11",
+    "@earendil-works/pi-ai": "^1.0.0",
+    "@earendil-works/pi-coding-agent": "^1.1.0",
+    "@earendil-works/pi-tui": "^1.0.0",
+    "@oxlint/plugins": "^1.80.0",
+    "@sinclair/typebox": "^0.34.52",
+    "auto-changelog": "^2.6.0",
+    "oxlint": "^1.80.0",
+    "typescript": "5.9.3"
+  }
+}

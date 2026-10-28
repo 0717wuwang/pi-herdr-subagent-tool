@@ -1,0 +1,9 @@
+{
+  "skills": [
+    "./skills/run-integration-tests/SKILL.md"
+  ],
+  "extensions": [
+    "/home/wuwang/.pi/agent/extensions/rtk.ts",
+    "-/home/wuwang/.pi/agent/extensions/rtk.ts"
+  ]
+}
