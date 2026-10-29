@@ -316,6 +316,8 @@ Focus is display only. Hidden children keep running and still raise notification
 
 The durable configuration file is `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`, default `~/.pi/agent/herdr-agents/config.jsonl`. Package upgrades never overwrite it. Create it by copying the installed package's `config.jsonl.example`, or run `/subagents-init`. The extension reads it at startup, so run `/reload` after any change. A package-root `config.jsonl` is ignored.
 
+Users upgrading from the old `config.json`: rename it to `config.jsonl` — the old file is no longer read. See [Upgrading from `config.json`](docs/configuration.md#upgrading-from-configjson).
+
 | Key | Default | Controls |
 | --- | --- | --- |
 | `status.enabled` | `true` | The live subagent widget. This section is required. |

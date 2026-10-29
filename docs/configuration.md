@@ -20,6 +20,15 @@ the parser. Copy it, keep the sections you need (replace the `models` template
 with your real `provider/model-id`), and save the result as
 `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`.
 
+### Upgrading from `config.json`
+
+`config.json` is no longer read. To migrate your existing settings, rename (or
+copy) your old `config.json` to `config.jsonl` in the same location — a plain
+JSON object, pretty-printed or on one line, is a valid single JSONL record and
+parses to the same result. Add the `models` section (required for model-driven
+dispatch) if it is missing — see [Models](#models) — then run `/reload`. Delete
+the old `config.json` to avoid confusion.
+
 Every configuration key, in template order, with its type, default, and
 description:
 
