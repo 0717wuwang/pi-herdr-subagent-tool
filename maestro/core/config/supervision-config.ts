@@ -1,5 +1,8 @@
 import { join } from "node:path";
-import { parseConfigJson, readConfigWithExampleFallback } from "./config-source.ts";
+import {
+	parseConfigFor,
+	readConfigWithExampleFallback,
+} from "./config-source.ts";
 import { isBoolean, isFiniteNumber, isRecord } from "./type-guards.ts";
 
 export interface SupervisionConfig {
@@ -15,7 +18,7 @@ function invalid(source: string, message: string): never {
 
 export function parseSupervisionConfig(
 	rawConfig: any,
-	source = "config.json",
+	source = "config.jsonl",
 ): SupervisionConfig {
 	if (!isRecord(rawConfig)) invalid(source, "root must be an object");
 	if (!Object.hasOwn(rawConfig, "supervision")) {
@@ -62,11 +65,14 @@ export function loadSupervisionConfig(
 	configDir: string,
 	examplePath: string,
 ): SupervisionConfig {
-	const configPath = join(configDir, "config.json");
+	const configPath = join(configDir, "config.jsonl");
 	const { sourcePath, rawConfig } = readConfigWithExampleFallback(
 		configPath,
 		examplePath,
 		"subagent supervision",
 	);
-	return parseSupervisionConfig(parseConfigJson(rawConfig, sourcePath), sourcePath);
+	return parseSupervisionConfig(
+		parseConfigFor(rawConfig, sourcePath),
+		sourcePath,
+	);
 }

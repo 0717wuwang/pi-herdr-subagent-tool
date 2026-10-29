@@ -54,8 +54,8 @@ pi install npm:pi-herdr-subagent-tool
 
 Use `pi list` to check your existing package sources. If a copy from another source is enabled, disable that copy with `pi config` before loading the npm package. Do not load both copies. Start Pi inside Herdr.
 
-1. Open `$PI_CODING_AGENT_DIR/herdr-agents/config.json`. The default is `~/.pi/agent/herdr-agents/config.json`.
-2. If the file does not exist, copy `config.json.example` from the extension there first. The extension rejects a `config.json` without its `status` section.
+1. Open `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`. The default is `~/.pi/agent/herdr-agents/config.jsonl`.
+2. If the file does not exist, copy `config.jsonl.example` from the extension there first. The extension rejects a `config.jsonl` without its `status` section.
 3. Merge the `sidebar` section into the file. Keep the existing `status`, `models`, and other sections. Do not replace the file.
 
    ```json

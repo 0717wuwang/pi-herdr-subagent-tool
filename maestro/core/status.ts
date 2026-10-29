@@ -1,5 +1,5 @@
 import {
-	parseConfigJson,
+	parseConfigFor,
 	readConfigWithExampleFallback,
 } from "./config/config-source.ts";
 import { isBoolean, isPlainObject } from "./config/type-guards.ts";
@@ -153,7 +153,7 @@ function activityLabel(
 
 export function parseStatusConfig(
 	rawConfig: any,
-	source = "config.json",
+	source = "config.jsonl",
 ): StatusConfig {
 	const config = requireObject(rawConfig, source, "root");
 	const status = requireObject(config.status, source, "status");
@@ -175,7 +175,10 @@ export function loadStatusConfig(
 		examplePath,
 		"subagent status",
 	);
-	return parseStatusConfig(parseConfigJson(rawConfig, sourcePath), sourcePath);
+	return parseStatusConfig(
+		parseConfigFor(rawConfig, sourcePath),
+		sourcePath,
+	);
 }
 
 export function formatElapsedDuration(ms: number): string {

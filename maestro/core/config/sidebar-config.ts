@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseConfigFor } from "./config-source.ts";
 import { isBoolean, isRecord } from "./type-guards.ts";
 
 export interface SidebarConfig {
@@ -13,7 +14,7 @@ function invalid(source: string, message: string): never {
 
 export function parseSidebarConfig(
 	rawConfig: any,
-	source = "config.json",
+	source = "config.jsonl",
 ): SidebarConfig {
 	if (!isRecord(rawConfig)) invalid(source, "root must be an object");
 	if (!Object.hasOwn(rawConfig, "sidebar")) return { enabled: false };
@@ -34,7 +35,7 @@ export function loadSidebarConfig(
 	configDir: string,
 	examplePath: string,
 ): SidebarConfig {
-	let sourcePath = join(configDir, "config.json");
+	let sourcePath = join(configDir, "config.jsonl");
 	let rawConfig: string;
 	try {
 		rawConfig = readFileSync(sourcePath, "utf8");
@@ -51,13 +52,8 @@ export function loadSidebarConfig(
 			throw exampleError;
 		}
 	}
-	try {
-		return parseSidebarConfig(JSON.parse(rawConfig), sourcePath);
-	} catch (error) {
-		if (error instanceof SyntaxError)
-			throw new Error(
-				`Invalid JSON in subagent config ${sourcePath}: ${error.message}`,
-			);
-		throw error;
-	}
+	return parseSidebarConfig(
+		parseConfigFor(rawConfig, sourcePath),
+		sourcePath,
+	);
 }

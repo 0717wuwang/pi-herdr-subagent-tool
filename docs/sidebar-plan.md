@@ -163,7 +163,7 @@ README's sidebar markers section.
   README. The manifest declares `min_herdr_version = "0.9.0"` and
   `platforms = ["linux"]`, because Herdr accepts only plain versions and the
   host marks nothing outside Linux.
-- Host setting: `sidebar.enabled` in `config.json`, `false` by default.
+- Host setting: `sidebar.enabled` in `config.jsonl`, `false` by default.
 - Marker owner: `maestro/runtime/delegated-marker.ts`, attached per launched
   attempt in `maestro/runtime/pi-run-session.ts`. It publishes only after the
   existing process-identity capture verifies the child, renews from the

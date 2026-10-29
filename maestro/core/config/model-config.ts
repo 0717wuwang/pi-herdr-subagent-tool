@@ -1,4 +1,4 @@
-// 子代理模型的唯一来源：$PI_CODING_AGENT_DIR/herdr-agents/config.json。
+// 子代理模型的唯一来源：$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl。
 // 这里只做「读取与校验」：不做推测、不回退、不推荐候选，配置缺失即硬失败。
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -9,6 +9,7 @@ import {
 } from "../model-ref.ts";
 import type { ThinkingLevel } from "../types.ts";
 import { isNonEmptyString, isRecord, isString } from "./type-guards.ts";
+import { parseConfigJsonl } from "./config-source.ts";
 
 /** 单个模型条目；`thinking` 缺省表示「不指定思考级别」。 */
 export interface ModelEntry {
@@ -135,7 +136,7 @@ function parseAgents(value: any, source: string): AgentModelChains {
 /** 解析 `models` 段。未配置时返回空配置；旧格式一律报错，不做兼容降级。 */
 export function parseModelConfig(
 	rawConfig: any,
-	source = "config.json",
+	source = "config.jsonl",
 ): ModelConfig {
 	if (!isRecord(rawConfig)) {
 		throw invalidModelConfig(source, "config root must be a JSON object");
@@ -173,15 +174,15 @@ export function parseModelConfig(
 
 /** 读取持久配置中的 `models` 段；文件缺失视为未配置。 */
 export function loadModelConfig(configDir: string): ModelConfig {
-	const configPath = join(configDir, "config.json");
+	const configPath = join(configDir, "config.jsonl");
 	if (!existsSync(configPath)) return { agents: {} };
 	let raw: any;
 	try {
-		raw = JSON.parse(readFileSync(configPath, "utf8"));
+		raw = parseConfigJsonl(readFileSync(configPath, "utf8"), configPath);
 	} catch (error) {
 		throw invalidModelConfig(
 			configPath,
-			`file is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+			`file is not valid JSONL: ${error instanceof Error ? error.message : String(error)}`,
 		);
 	}
 	return parseModelConfig(raw, configPath);

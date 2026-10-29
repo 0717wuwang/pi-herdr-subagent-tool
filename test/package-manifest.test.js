@@ -108,7 +108,7 @@ describe("pack-neutral package contents", () => {
 		for (const path of [
 			"README.md",
 			"LICENSE",
-			"config.json.example",
+			"config.jsonl.example",
 			"pi-extension/subagents/index.ts",
 		]) {
 			assert.equal(

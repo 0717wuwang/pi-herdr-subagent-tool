@@ -151,7 +151,7 @@ The main `subagent` parameters are `name`, `task`, `agent`, `model`, `thinking`,
 
 ## Choose models
 
-`config.json` is the only model source. This package ships no model list and
+`config.jsonl` is the only model source. This package ships no model list and
 never falls back to the parent session's model, so an unconfigured host refuses
 to launch a subagent instead of guessing:
 
@@ -188,7 +188,7 @@ may use a same-family reviewer in a fresh standalone session. Disclose that this
 review is context-isolated, not cross-family independent. Cross-family
 verification must not use this fallback.
 
-Because `config.json` owns both fields, `model` and `thinking` passed to
+Because `config.jsonl` owns both fields, `model` and `thinking` passed to
 `subagent` no longer take effect, and the acknowledgement says so. Run
 `/subagents-init` for a skeleton, then add the `models` section yourself and
 `/reload`. See [Models](docs/configuration.md#models),
@@ -289,7 +289,7 @@ Setup has two parts. Neither part works alone.
    herdr plugin install 0717wuwang/pi-herdr-subagent-tool/plugins/sidebar
    ```
 
-2. Open `$PI_CODING_AGENT_DIR/herdr-agents/config.json` (default `~/.pi/agent/herdr-agents/config.json`). If it does not exist, copy `config.json.example` from the installed package there first. The extension rejects a `config.json` without its `status` section.
+2. Open `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl` (default `~/.pi/agent/herdr-agents/config.jsonl`). If it does not exist, copy `config.jsonl.example` from the installed package there first. The extension rejects a `config.jsonl` without its `status` section.
 3. Merge the `sidebar` section into the file. Keep `status`, `models`, and every other section:
 
    ```json
@@ -314,7 +314,7 @@ Focus is display only. Hidden children keep running and still raise notification
 
 ## Configuration
 
-The durable configuration file is `$PI_CODING_AGENT_DIR/herdr-agents/config.json`, default `~/.pi/agent/herdr-agents/config.json`. Package upgrades never overwrite it. Create it by copying the installed package's `config.json.example`, or run `/subagents-init`. The extension reads it at startup, so run `/reload` after any change. A package-root `config.json` is ignored.
+The durable configuration file is `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`, default `~/.pi/agent/herdr-agents/config.jsonl`. Package upgrades never overwrite it. Create it by copying the installed package's `config.jsonl.example`, or run `/subagents-init`. The extension reads it at startup, so run `/reload` after any change. A package-root `config.jsonl` is ignored.
 
 | Key | Default | Controls |
 | --- | --- | --- |
@@ -331,7 +331,7 @@ See [Configuration](docs/configuration.md) for every key, the `models` structure
 
 - Child agents are real Pi processes running with your user account's permissions, inside Herdr panes. Worktrees isolate Git checkouts, not processes or permissions.
 - The extension creates Herdr panes, tabs and managed worktrees only when a launch asks for them. It never pushes, merges, opens pull requests, deletes branches or removes worktrees on its own; cleanup is an explicit parent action ([worktree cleanup](docs/tools.md#explicit-worktree-cleanup)).
-- What it writes: `$PI_CODING_AGENT_DIR/herdr-agents/config.json` (only through `/subagents-init` or the writer tool, never on startup); per-launch artifacts under the parent session's `artifacts/<session-id>/` directory beside Pi's session store, which hold the child's full task text and any `systemPrompt` as Markdown files, activity snapshots and worktree manifests; and the child's own Pi session file. A managed worktree that carries its own `.pi/agent` directory receives that child's session inside the checkout. Treat task text as potentially sensitive when you share or inspect those files.
+- What it writes: `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl` (only through `/subagents-init` or the writer tool, never on startup); per-launch artifacts under the parent session's `artifacts/<session-id>/` directory beside Pi's session store, which hold the child's full task text and any `systemPrompt` as Markdown files, activity snapshots and worktree manifests; and the child's own Pi session file. A managed worktree that carries its own `.pi/agent` directory receives that child's session inside the checkout. Treat task text as potentially sensitive when you share or inspect those files.
 - Managed worktree children record their PID, process start time, boot ID, and PID namespace in `<session>.process.json` beside their session. With [`sidebar.enabled`](docs/configuration.md#sidebar-markers), the parent reads each child pane's agent session from Herdr and reports one display-only pane token, `piha_delegated_v1`, on that pane through the Herdr socket. With the setting off, the extension writes no pane metadata.
 - To uninstall: first list and remove any retained worktrees while the extension is still loaded (`/worktree list`, then `/worktree remove <target>`), because those commands leave with the package. If you installed the optional sidebar plugin, remove it with `herdr plugin uninstall pi-herdr-agents.sidebar` (or `herdr plugin unlink` for a linked copy). Then run `pi remove npm:pi-herdr-subagent-tool`, and delete `$PI_CODING_AGENT_DIR/herdr-agents/` and the `artifacts/` directories above if you no longer want the configuration and launch records.
 
@@ -349,7 +349,7 @@ More checks are in [Troubleshooting](docs/troubleshooting.md).
 | Page | Contents |
 | --- | --- |
 | [Tools and lifecycle](docs/tools.md) | Every tool and command, parameters, status labels, persistent specialists, interrupt, cancel, resume, and `/worktree` |
-| [Configuration](docs/configuration.md) | `config.json`, model preferences, `/subagents-init`, init events, sidebar markers, supervision, and pane placement |
+| [Configuration](docs/configuration.md) | `config.jsonl`, model preferences, `/subagents-init`, init events, sidebar markers, supervision, and pane placement |
 | [Roles and custom agents](docs/roles.md) | Discovery, frontmatter reference, tool access control, and role packs |
 | [Worktree subagents](docs/worktree-subagents.md) | Worktree operation, review, recovery, and cleanup |
 | [Troubleshooting](docs/troubleshooting.md) | Completion delivery and other common problems |

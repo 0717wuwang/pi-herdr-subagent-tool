@@ -187,7 +187,7 @@ async function makeFixture() {
 	let latest: PiRunRecord | undefined;
 	const options: DefaultRunSessionOptions = {
 		configDir: dir,
-		configExamplePath: new URL("../../config.json.example", import.meta.url)
+		configExamplePath: new URL("../../config.jsonl.example", import.meta.url)
 			.pathname,
 		infrastructure: {
 			surfaceProvider: provider,
@@ -205,12 +205,12 @@ async function makeFixture() {
 				sessionDir: join(dir, "sessions"),
 				agentDir: dir,
 			},
-			// 模型唯一来源：测试夹具直接注入配置，模拟组合根从 config.json 读到的内容。
+			// 模型唯一来源：测试夹具直接注入配置，模拟组合根从 config.jsonl 读到的内容。
 			modelConfig: {
 				default: [{ model: "test/one", thinking: "high" }],
 				agents: {},
 			},
-			modelConfigPath: join(dir, "herdr-agents", "config.json"),
+			modelConfigPath: join(dir, "herdr-agents", "config.jsonl"),
 			paneConfig: { mode: "tab", direction: "right", maxPerTab: 4 },
 			modelRegistry: {
 				find: (p, id) => ({ provider: p, id, reasoning: true }),
@@ -338,7 +338,7 @@ test("Task17 discovered Role frontmatter model defaults never steer the configur
 			cwd: f.dir,
 		});
 		const started = session.getStarted("core-role")!;
-		// frontmatter 的 model/thinking 只留在角色定义里，派发一律用 config.json。
+		// frontmatter 的 model/thinking 只留在角色定义里，派发一律用 config.jsonl。
 		assert.equal(definition.role.defaults?.model, "test/role-default");
 		assert.equal(started.model, "test/one");
 		assert.equal(started.thinking, "high");

@@ -222,7 +222,7 @@ _Avoid_: Implicit commit, stash, discard
 
 **Model entry**:
 One `{ "model", "thinking"? }` object in `models.default` or
-`models.agents.<name>` of `$PI_CODING_AGENT_DIR/herdr-agents/config.json`, the
+`models.agents.<name>` of `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`, the
 only model source. `thinking` is optional and applied exactly as written; when
 omitted, no thinking level is sent, and nothing is inferred, clamped, or
 inherited. The parent session's model, role frontmatter, and `subagent`

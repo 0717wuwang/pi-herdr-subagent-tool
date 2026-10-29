@@ -88,7 +88,7 @@ Within the package layer:
 Earlier versions collected an enabled bundled layer first, rejected role packs
 that collided with it, and let `roles.bundled: false` remove it. ADR-0013
 retires that layer. Valid `roles.bundled` booleans in
-`$PI_CODING_AGENT_DIR/herdr-agents/config.json` are now accepted as deprecated
+`$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl` are now accepted as deprecated
 no-ops with one parent-session warning per extension load; malformed values and
 unknown `roles` keys remain errors, and the file is never rewritten. Package-root
 configuration is still ignored.

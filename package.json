@@ -20,7 +20,7 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "config.json.example"
+    "config.jsonl.example"
   ],
   "author": {
     "name": "Giuseppe Rodriguez",

@@ -40,7 +40,7 @@ authenticated Pi `provider/model-id`.
 Role packs own their roles' prerequisites, such as a required skill, and must
 document them. This package does not install role packs or prerequisites.
 
-Roles do not carry models. `$PI_CODING_AGENT_DIR/herdr-agents/config.json` is the
+Roles do not carry models. `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl` is the
 only model source: `models.agents.<name>` for one role, otherwise
 `models.default`, otherwise the launch fails before any Herdr resource exists.
 A role's frontmatter `model` and `thinking` are still parsed for compatibility
@@ -244,8 +244,8 @@ Compare definitions against the reference below and verify them with
 | ------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`        | string  | Optional explicit agent name used in `agent: "my-agent"`; defaults to the filename stem and must match it in role packs                                                                                                                                                                                            |
 | `description` | string  | Shown in `subagents_list` output                                                                                                                                                                                                                                            |
-| `model`       | string  | Parsed for compatibility with published role packs and ignored: `config.json` `models.agents.<name>` or `models.default` is the only model source |
-| `thinking`    | string  | Parsed for compatibility and ignored: the thinking level comes only from the same `config.json` entry |
+| `model`       | string  | Parsed for compatibility with published role packs and ignored: `config.jsonl` `models.agents.<name>` or `models.default` is the only model source |
+| `thinking`    | string  | Parsed for compatibility and ignored: the thinking level comes only from the same `config.jsonl` entry |
 | `system-prompt` | string | `append` passes the agent body through Pi's appended system prompt; `replace` replaces Pi's default system prompt. Without this field, the body is included in the task wrapper                                                                                                                                                                                                                                 |
 | `tools`       | string  | One non-empty inline comma-separated Pi `--tools` allowlist under the exact unquoted key `tools:`; may contain any registered built-in, extension, or custom tool name. Omit to leave unrestricted. YAML lists, containers, multiline values, quotes, comments, noncanonical keys, and duplicates are rejected. |
 | `skills`      | string  | Comma-separated installed skill names to auto-load. Use this plural form for new definitions; legacy project/global definitions using singular `skill` remain compatible. |

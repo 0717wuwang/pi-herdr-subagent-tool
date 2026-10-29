@@ -32,7 +32,7 @@ A launch that needs a model fails before any Herdr workspace, tab, pane, or
 worktree exists. The message names the configuration path and the reason (no
 `models` section, an empty one, or no `default` and no `agents` entry for that
 role). Add the missing entry under `models.default` or `models.agents` in
-`$PI_CODING_AGENT_DIR/herdr-agents/config.json`, then run `/reload`. A
+`$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`, then run `/reload`. A
 `/subagents-init` skeleton deliberately contains no `models` section, so a fresh
 skeleton never launches a child on its own. `subagent_stop`,
 `subagent_cancel`, and `subagent_interrupt` need no model and keep working, so an

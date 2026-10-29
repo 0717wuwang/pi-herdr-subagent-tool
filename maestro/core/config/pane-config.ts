@@ -1,5 +1,8 @@
 import { join } from "node:path";
-import { parseConfigJson, readConfigWithExampleFallback } from "./config-source.ts";
+import {
+	parseConfigFor,
+	readConfigWithExampleFallback,
+} from "./config-source.ts";
 import { isPlainObject, isString } from "./type-guards.ts";
 
 export type PaneMode = "grouped" | "tab" | "split";
@@ -30,7 +33,7 @@ function invalidPaneConfig(source: string, message: string): never {
 
 export function parsePaneConfig(
 	rawConfig: any,
-	source = "config.json",
+	source = "config.jsonl",
 ): PaneConfig {
 	if (!isPlainObject(rawConfig)) {
 		invalidPaneConfig(source, "root must be an object");
@@ -92,18 +95,20 @@ export function parsePaneConfig(
 	return { mode, direction, maxPerTab };
 }
 
-
 export function loadPaneConfig(
 	configDir: string,
 	examplePath: string,
 ): PaneConfig {
-	const configPath = join(configDir, "config.json");
+	const configPath = join(configDir, "config.jsonl");
 	const { sourcePath, rawConfig } = readConfigWithExampleFallback(
 		configPath,
 		examplePath,
 		"subagent pane",
 	);
-	return parsePaneConfig(parseConfigJson(rawConfig, sourcePath), sourcePath);
+	return parsePaneConfig(
+		parseConfigFor(rawConfig, sourcePath),
+		sourcePath,
+	);
 }
 
 export function createSubagentPaneFactory(

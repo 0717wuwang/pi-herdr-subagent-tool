@@ -6,7 +6,7 @@
 ## Context
 
 Model choice reached the launcher from four places at once: the tool argument,
-role frontmatter, `models` in `config.json`, and the parent session's model. A
+role frontmatter, `models` in `config.jsonl`, and the parent session's model. A
 live registry also fed a generated catalog into the tool description and drove
 `/subagents-init` to draft `models.tasks` preferences for `task:<category>`
 syntax. Each additional source made the effective model of a launch depend on

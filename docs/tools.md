@@ -127,8 +127,8 @@ subagent({
 | `fork`                 | boolean | —              | Override the child session mode: `true` forces fork, `false` forces standalone. Omit to inherit the agent `session-mode` frontmatter |
 | `persistent`           | boolean | `false`        | Keep one specialist session alive for sequential tasks; follow-ups use `subagent_send` only       |
 | `interactive`          | boolean | derived        | Mark this spawn as interactive (don't wake the parent on stall/recovery). Defaults to the agent's `interactive` frontmatter, otherwise the inverse of `auto-exit`. |
-| `model`                | string  | overridden     | Accepted for compatibility and **overridden by `config.json`**: `models.agents.<agent>` then `models.default`. The acknowledgement states the override. A request that resolves no configured entry fails before any Herdr resource exists |
-| `thinking`             | string  | overridden     | Accepted for compatibility and **overridden by the same `config.json` entry**: the configured level is applied exactly, or none is sent when the entry omits it. Nothing is inferred, clamped, or inherited |
+| `model`                | string  | overridden     | Accepted for compatibility and **overridden by `config.jsonl`**: `models.agents.<agent>` then `models.default`. The acknowledgement states the override. A request that resolves no configured entry fails before any Herdr resource exists |
+| `thinking`             | string  | overridden     | Accepted for compatibility and **overridden by the same `config.jsonl` entry**: the configured level is applied exactly, or none is sent when the entry omits it. Nothing is inferred, clamped, or inherited |
 | `systemPrompt`         | string  | —              | Role text for a bare spawn, delivered as a role block at the top of the child's first message (not the system prompt); dropped for `fork: true` children. Named agents keep their definition body |
 | `skills`               | string  | —              | Comma-separated skill names                                                                       |
 | `tools`                | string  | —              | Comma-separated tool names                                                                        |
@@ -144,7 +144,7 @@ through a task artifact file referenced with `@path`. A full-context fork
 
 ### Models and thinking come only from config
 
-`$PI_CODING_AGENT_DIR/herdr-agents/config.json` owns both fields. The `model` and
+`$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl` owns both fields. The `model` and
 `thinking` parameters stay in the schema for compatibility, but a call that sets
 them is overridden and the acknowledgement says so. Resolution is
 `models.agents.<agent>`, then `models.default`, then a hard failure with the

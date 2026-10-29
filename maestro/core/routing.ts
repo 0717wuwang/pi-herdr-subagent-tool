@@ -1,4 +1,4 @@
-// 路由层：把「config.json 中配置的模型条目」校验成可执行的运行时计划。
+// 路由层：把「config.jsonl 中配置的模型条目」校验成可执行的运行时计划。
 // 这里只做精确校验（注册表命中 + 已配置鉴权），不推测、不列举、不回退父模型。
 import type { ModelEntry } from "./config/model-config.ts";
 import { isString } from "./config/type-guards.ts";
@@ -91,7 +91,7 @@ export function resolveRuntimePlan(
 	const found = registry.find(parsed.provider, parsed.modelId);
 	if (!found) {
 		throw new RuntimeResolutionError(
-			`Configured model ${JSON.stringify(entry.model)} is not in the model registry; configure an exact provider/model-id in config.json (see docs/configuration.md).`,
+			`Configured model ${JSON.stringify(entry.model)} is not in the model registry; configure an exact provider/model-id in config.jsonl (see docs/configuration.md).`,
 		);
 	}
 	if (!registry.hasConfiguredAuth(found)) {

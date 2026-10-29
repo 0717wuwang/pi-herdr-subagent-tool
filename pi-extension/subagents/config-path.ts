@@ -14,11 +14,11 @@ export function getSubagentsConfigDir(): string {
 }
 
 export function getSubagentsConfigPath(): string {
-	return join(getSubagentsConfigDir(), "config.json");
+	return join(getSubagentsConfigDir(), "config.jsonl");
 }
 
 export function getSubagentsConfigExamplePath(): string {
-	return join(PACKAGE_ROOT, "config.json.example");
+	return join(PACKAGE_ROOT, "config.jsonl.example");
 }
 
 export function getSubagentsPackageRoot(): string {

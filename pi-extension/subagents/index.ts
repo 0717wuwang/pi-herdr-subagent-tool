@@ -63,6 +63,7 @@ import {
 	type ModelConfig,
 	selectModelChain,
 } from "../../maestro/core/config/model-config.ts";
+import { parseConfigJsonl } from "../../maestro/core/config/config-source.ts";
 import {
 	getAgentConfigDir,
 	getSubagentsConfigDir,
@@ -169,7 +170,7 @@ function buildSubagentRoutingGuidelines(): string[] {
 	return [
 		"Act as the coordinator: decompose the work, give each child one bounded outcome — goal, allowed files, verification, and whether to commit — and keep dependent writes sequential; parallelize only independent tasks.",
 		"Children are leaves by default: they do not push, merge, deploy, or orchestrate further agents unless their task explicitly authorizes it. The parent inspects each result or worktree handoff (diff against the reported base, run relevant tests) and owns integration, verification, and cleanup.",
-		"Child models and thinking levels come only from `models` in the persisted config.json ($PI_CODING_AGENT_DIR/herdr-agents/config.json). Do not pass model or thinking to steer routing: configured values override call parameters, and a missing entry fails the launch before any resource is created.",
+		"Child models and thinking levels come only from `models` in the persisted config.jsonl ($PI_CODING_AGENT_DIR/herdr-agents/config.jsonl). Do not pass model or thinking to steer routing: configured values override call parameters, and a missing entry fails the launch before any resource is created.",
 		"For ordinary review, prefer a child configured with a different model family. When no other family is configured, ordinary review may use a same-family reviewer in a fresh standalone session; disclose that this review is context-isolated, not cross-family independent. Cross-family verification must not use this fallback.",
 		"Before launching a new group of subagents, choose a short task slug and name each new child <task>-<role>[-n], for example login-api or login-test2. Use only plan, research, ui, api, build, test, review, browser, security, perf, or merge as roles; leave existing names unchanged. After the final launch, print name | agent kind | role | model | worktree (if any), then use each name in prompts, handoffs, and results.",
 	];
@@ -181,7 +182,7 @@ const ThinkingLevelSchema = Type.Union(
 	THINKING_LEVELS.map((level) => Type.Literal(level)),
 	{
 		description:
-			"Pi thinking level. Models and thinking levels are configured per agent in config.json; a configured value overrides this parameter, and an unconfigured level means Pi picks none. Use it only when you need a different level for a one-off diagnostic run.",
+			"Pi thinking level. Models and thinking levels are configured per agent in config.jsonl; a configured value overrides this parameter, and an unconfigured level means Pi picks none. Use it only when you need a different level for a one-off diagnostic run.",
 	},
 );
 
@@ -206,7 +207,7 @@ const SubagentParams = Type.Object({
 	model: Type.Optional(
 		Type.String({
 			description:
-				"Exact provider/model-id. Models are configured per agent in config.json ($PI_CODING_AGENT_DIR/herdr-agents/config.json), and a configured value overrides this parameter; the call fails before creating any resource when no model is configured for the agent. Passing this value is reported back in the acknowledgement, never applied silently. Worktrees allow exactly one configured candidate.",
+				"Exact provider/model-id. Models are configured per agent in config.jsonl ($PI_CODING_AGENT_DIR/herdr-agents/config.jsonl), and a configured value overrides this parameter; the call fails before creating any resource when no model is configured for the agent. Passing this value is reported back in the acknowledgement, never applied silently. Worktrees allow exactly one configured candidate.",
 		}),
 	),
 	thinking: Type.Optional(ThinkingLevelSchema),
@@ -488,7 +489,7 @@ const statusConfig = loadStatusConfig(
 	getSubagentsConfigPath(),
 	getSubagentsConfigExamplePath(),
 );
-// 模型配置在每次派发时读取：用户改完 config.json 无需重启，也不会缓存过期结论。
+// 模型配置在每次派发时读取：用户改完 config.jsonl 无需重启，也不会缓存过期结论。
 function currentModelConfig(): ModelConfig {
 	return loadModelConfig(getSubagentsConfigDir());
 }
@@ -2044,11 +2045,11 @@ function overrideNoticeText(params: typeof SubagentParams.static): string {
 		params.thinking === undefined ? undefined : "thinking",
 	].filter((name): name is string => name !== undefined);
 	if (overridden.length === 0) return "";
-	return `Note: ${overridden.join(" and ")} passed to this call was overridden by config.json; the child runs the configured value. `;
+	return `Note: ${overridden.join(" and ")} passed to this call was overridden by config.jsonl; the child runs the configured value. `;
 }
 
 /**
- * 在创建任何 Herdr 资源之前，按 config.json 校验本角色（缺省走 `models.default`）的候选链。
+ * 在创建任何 Herdr 资源之前，按 config.jsonl 校验本角色（缺省走 `models.default`）的候选链。
  * 未配置即抛错；整链不可用也抛错，并给出配置文件路径与逐条失败原因。
  */
 function resolveSubagentRuntimePlans(
@@ -2056,7 +2057,7 @@ function resolveSubagentRuntimePlans(
 	ctx: Parameters<typeof normalizePiAttempt>[1],
 ): ResolvedRuntimePlan[] {
 	// 角色存在性由 normalizeSubagentParams 校验；这里只按名字取配置链。
-	// 模型/思考级别唯一来源：config.json。调用参数不再参与路由。
+	// 模型/思考级别唯一来源：config.jsonl。调用参数不再参与路由。
 	const configPath = getSubagentsConfigPath();
 	const chain = selectModelChain(
 		currentModelConfig(),
@@ -2651,7 +2652,7 @@ export default function subagentsExtension(
 				}
 
 				// Launch the subagent (creates pane, sends command)
-				// 先按 config.json 校验候选模型：失败时零资源副作用。
+				// 先按 config.jsonl 校验候选模型：失败时零资源副作用。
 				const runtimePlans = resolveSubagentRuntimePlans(params, ctx);
 				runtime.latestCtx = ctx;
 				const id = randomUUID();
@@ -3181,19 +3182,20 @@ export default function subagentsExtension(
 			},
 		});
 
-	// 只生成骨架：模型是用户资产，必须由用户写入 config.json。
+	// 只生成骨架：模型是用户资产，必须由用户写入 config.jsonl。
 	if (!process.env.PI_SUBAGENT_ID) {
 		pi.registerCommand("subagents-init", {
 			description:
-				"Create or update the herdr-agents config.json skeleton without any model settings",
+				"Create or update the herdr-agents config.jsonl skeleton without any model settings",
 			handler: async (_args, ctx) => {
 				const configPath = getSubagentsConfigPath();
 				try {
-					const example = JSON.parse(
+					const example = parseConfigJsonl(
 						readFileSync(getSubagentsConfigExamplePath(), "utf8"),
+						getSubagentsConfigExamplePath(),
 					);
 					const existing = existsSync(configPath)
-						? JSON.parse(readFileSync(configPath, "utf8"))
+						? parseConfigJsonl(readFileSync(configPath, "utf8"), configPath)
 						: undefined;
 					const plan = buildConfigSkeleton(existing, example);
 					mkdirSync(getSubagentsConfigDir(), { recursive: true });
@@ -3312,7 +3314,7 @@ export default function subagentsExtension(
 				}
 				const task =
 					parts.join(" ") || "Continue the current work in the new worktree.";
-				// worktree 交接同样只认 config.json：worktree 只接受单条候选。
+				// worktree 交接同样只认 config.jsonl：worktree 只接受单条候选。
 				const [runtimePlan] = resolveSubagentRuntimePlans(
 					{ worktree: { branch } },
 					ctx,

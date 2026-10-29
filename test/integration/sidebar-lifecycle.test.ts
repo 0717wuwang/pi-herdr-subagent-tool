@@ -69,6 +69,7 @@ import { requestHerdrSocket } from "../../maestro/surfaces/herdr/herdr-socket.ts
 import { DELEGATED_MARKER_SOURCE } from "../../maestro/runtime/delegated-marker.ts";
 import { resetProviderRequests } from "./fake-provider.ts";
 import { isRecord, isString } from "../../maestro/core/config/type-guards.ts";
+import { parseConfigJsonl } from "../../maestro/core/config/config-source.ts";
 
 interface ListedPane {
 	pane: string;
@@ -212,18 +213,20 @@ for (const backend of backends) {
 		let launch: Launch | undefined;
 		let canary: Canary | undefined;
 
-		/** Users seed config.json from the example, then add the sidebar key. */
+		/** Users seed config.jsonl from the example, then add the sidebar key. */
 		function writeSidebarSetting(enabled: boolean) {
 			const configDir = join(env.dir, ".pi", "agent", "herdr-agents");
 			mkdirSync(configDir, { recursive: true });
-			const example = JSON.parse(
-				readFileSync(
-					new URL("../../config.json.example", import.meta.url),
-					"utf8",
-				),
+			const examplePath = new URL(
+				"../../config.jsonl.example",
+				import.meta.url,
+			).pathname;
+			const example = parseConfigJsonl(
+				readFileSync(examplePath, "utf8"),
+				examplePath,
 			);
 			writeFileSync(
-				join(configDir, "config.json"),
+				join(configDir, "config.jsonl"),
 				JSON.stringify({ ...example, sidebar: { enabled } }),
 			);
 		}

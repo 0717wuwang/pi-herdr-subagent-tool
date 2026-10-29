@@ -115,7 +115,7 @@ export interface PiLaunchSnapshot {
 		sessionDir: string;
 		agentDir?: string;
 	};
-	/** 模型来源唯一：持久配置 config.json 解析结果。 */
+	/** 模型来源唯一：持久配置 config.jsonl 解析结果。 */
 	modelConfig?: ModelConfig;
 	/** 配置文件绝对路径，仅用于错误信息。 */
 	modelConfigPath?: string;
@@ -437,7 +437,7 @@ interface PiSessionOwner {
 }
 
 /**
- * 解析 config.json 为该角色的候选链计划。派发与恢复都在创建任何资源之前调用它：
+ * 解析 config.jsonl 为该角色的候选链计划。派发与恢复都在创建任何资源之前调用它：
  * 未配置即抛错，整链不可用也抛错。
  */
 function configuredPlans(
@@ -445,7 +445,7 @@ function configuredPlans(
 	roleName: string,
 	worktree: boolean,
 ): ResolvedRuntimePlan[] {
-	const configPath = snapshot.modelConfigPath ?? "config.json";
+	const configPath = snapshot.modelConfigPath ?? "config.jsonl";
 	const modelConfig = snapshot.modelConfig;
 	if (!modelConfig) {
 		throw new ModelNotConfiguredError(

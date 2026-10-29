@@ -1,5 +1,8 @@
 import { join } from "node:path";
-import { parseConfigJson, readConfigWithExampleFallback } from "./config-source.ts";
+import {
+	parseConfigFor,
+	readConfigWithExampleFallback,
+} from "./config-source.ts";
 import { isFiniteNumber, isRecord } from "./type-guards.ts";
 
 export const DEFAULT_MAX_PERSISTENT_AGENTS = 3;
@@ -16,7 +19,7 @@ function invalidPersistentConfig(source: string, message: string): never {
 
 export function parsePersistentConfig(
 	rawConfig: any,
-	source = "config.json",
+	source = "config.jsonl",
 ): PersistentConfig {
 	if (!isRecord(rawConfig)) {
 		invalidPersistentConfig(source, "root must be an object");
@@ -53,16 +56,18 @@ export function parsePersistentConfig(
 	return { maxAgents };
 }
 
-
 export function loadPersistentConfig(
 	configDir: string,
 	examplePath: string,
 ): PersistentConfig {
-	const configPath = join(configDir, "config.json");
+	const configPath = join(configDir, "config.jsonl");
 	const { sourcePath, rawConfig } = readConfigWithExampleFallback(
 		configPath,
 		examplePath,
 		"persistent specialist",
 	);
-	return parsePersistentConfig(parseConfigJson(rawConfig, sourcePath), sourcePath);
+	return parsePersistentConfig(
+		parseConfigFor(rawConfig, sourcePath),
+		sourcePath,
+	);
 }

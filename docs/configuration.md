@@ -1,56 +1,56 @@
 # Configuration
 
-This page is the reference for the durable `config.json` settings and the
+This page is the reference for the durable `config.jsonl` settings and the
 config-owned model selection that drives every subagent. For a short
 introduction, see [Choose models](../README.md#choose-models) in the README.
 
 ## Configuration file
 
-The durable user configuration is `$PI_CODING_AGENT_DIR/herdr-agents/config.json`,
-defaulting to `~/.pi/agent/herdr-agents/config.json`. It is not read from the
+The durable user configuration is `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`,
+defaulting to `~/.pi/agent/herdr-agents/config.jsonl`. It is not read from the
 installed package root, so npm and git package upgrades do not overwrite it.
-Create it by copying the installed package's `config.json.example`, or run
-Create it by copying the installed package's `config.json.example`, or run
+Create it by copying the installed package's `config.jsonl.example`, or run
 `/subagents-init` to seed the skeleton. Neither source contains model
 settings: the `models` section is yours to write.
 
-```json
-{
-  "status": {
-    "enabled": true
-  },
-  "models": {
-    "agents": {}
-  },
-  "persistent": {
-    "maxAgents": 3
-  },
-  "supervision": {
-    "forcePolling": false,
-    "hangWarningMinutes": 15
-  },
-  "panes": {
-    "mode": "grouped",
-    "direction": "right",
-    "maxPerTab": 4
-  }
-}
-```
+The shipped `config.jsonl.example` is a complete, commented template: every
+configuration section with its keys, defaults, and an example value. It can be
+used directly as the runtime `config.jsonl` — comment lines (`#`) are ignored by
+the parser. Copy it, keep the sections you need (replace the `models` template
+with your real `provider/model-id`), and save the result as
+`$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`.
 
-If `config.json` is absent, status, role, pane, and persistent-specialist settings fall back to `config.json.example`.
+Every configuration key, in template order, with its type, default, and
+description:
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `status.enabled` | boolean | `true` | Master switch; `false` disables every subagent feature. |
+| `models.agents` | object | `{}` | Per-role model selection keyed by the `agent` name passed to `subagent`. See [Models](#models). |
+| `persistent.maxAgents` | number | `3` | Cap on concurrently retained persistent specialists. |
+| `supervision.forcePolling` | boolean | `false` | Force the legacy 1-second poll instead of file wake-ups. |
+| `supervision.hangWarningMinutes` | number | `15` | Budget (minutes) before a no-progress hang warning; `0` disables it. |
+| `panes.mode` | `"grouped"` / `"tab"` / `"split"` | `"grouped"` | Group children in one tab, one tab each, or split the parent pane. |
+| `panes.direction` | `"right"` / `"down"` | `"right"` | Split direction for child panes. |
+| `panes.maxPerTab` | number | `4` | Max active panes per owned tab before a new tab opens. |
+| `sidebar.enabled` | boolean | `false` | Mark delegated children for the optional Herdr sidebar plugin. See [Sidebar markers](#sidebar-markers). |
+
+`config.jsonl` must contain a `status` section; the template starts with one.
+Every other section is optional, and an absent key keeps its default.
+
+If `config.jsonl` is absent, status, role, pane, and persistent-specialist settings fall back to `config.jsonl.example`.
 Model selection never reads the example or any other file: only a real
-`config.json` can supply a model, and without one every model-driven subagent
+`config.jsonl` can supply a model, and without one every model-driven subagent
 call fails before any Herdr resource is created.
 
-`config.json` is durable user state under the Pi agent directory and is loaded
+`config.jsonl` is durable user state under the Pi agent directory and is loaded
 when the extension starts. Run `/reload` after changing it. Package-root
-`config.json` files are ignored; move them manually or re-run `/subagents-init`.
-
+`config.jsonl` files are ignored; move them manually or re-run `/subagents-init`.
 ## Models
 
-`config.json` is the only model source. The extension ships no model list, no
+`config.jsonl` is the only model source. The extension ships no model list, no
 default provider, and no fallback to the session's parent model. It never reads
-role frontmatter, `config.json.example`, another package's files, or the model
+role frontmatter, `config.jsonl.example`, another package's files, or the model
 registry to *choose* a model; the registry is used only to verify an exact
 configured ID and its configured authentication.
 
@@ -83,19 +83,18 @@ Rules:
   `xhigh`, or `max`. It is applied verbatim. When it is absent the extension
   does not send a thinking level at all: nothing is inferred, clamped, checked
   against model capabilities, or inherited from the parent.
-- Because `config.json` owns both fields, values passed to `subagent` as `model`
+- Because `config.jsonl` owns both fields, values passed to `subagent` as `model`
   or `thinking` do not take effect. The acknowledgement says so explicitly.
 - A single entry is exactly equivalent to a one-element array.
 
-The shipped `config.json.example` and `/subagents-init` produce a skeleton
-without a `models` section. Add the section yourself as shown above.
+The shipped `config.jsonl.example` is a commented template that documents the `models` structure; `/subagents-init` seeds a `config.jsonl` skeleton. Neither activates a model — add the `models` section yourself as shown above.
 
 ### Missing or unusable configuration fails before launch
 
 `subagent`, `subagent_resume`, and `subagent_send` need a model, so they fail
 before creating any Herdr workspace, tab, pane, worktree, or session file when:
 
-- `config.json` has no `models` section,
+- `config.jsonl` has no `models` section,
 - neither `models.agents[<role>]` nor `models.default` has an entry for the
   role, or
 - no candidate in the resolved chain is usable.
@@ -173,8 +172,8 @@ action hides marked children from Herdr's Agents view. The setting defaults to
 }
 ```
 
-Add the key to your existing `config.json`. The extension rejects a
-`config.json` without its `status` section, so copy `config.json.example`
+Add the key to your existing `config.jsonl`. The extension rejects a
+`config.jsonl` without its `status` section, so copy `config.jsonl.example`
 first if the file does not exist. Run `/reload` after changing the setting.
 Children launched before the change stay unmarked.
 
@@ -223,7 +222,7 @@ keep the process running. If the watcher
 or shared pane inspection becomes unavailable, supervision quietly returns to
 the legacy one-second polling cadence. No caller action is required.
 
-Set `supervision.forcePolling` to `true` in the durable user `config.json` to
+Set `supervision.forcePolling` to `true` in the durable user `config.jsonl` to
 disable wake-ups and use that legacy cadence deliberately. The setting is read
 when the coordinator is created, so run `/reload` after changing it.
 `subagents_list` reports the active transport mode (`wake+batch`,

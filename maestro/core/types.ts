@@ -51,7 +51,7 @@ export interface Task {
 		model: string;
 		/** 配置的思考级别；未配置表示不下发 thinking。 */
 		thinking?: ThinkingLevel;
-		/** 已解析的后续候选（由宿主按 config.json 候选链生成），按序重试。 */
+		/** 已解析的后续候选（由宿主按 config.jsonl 候选链生成），按序重试。 */
 		fallbacks?: { model: string; thinking?: ThinkingLevel }[];
 	};
 	// pi-herdr-agents extension

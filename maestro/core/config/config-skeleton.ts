@@ -17,10 +17,10 @@ export function buildConfigSkeleton(
 	example: any,
 ): ConfigSkeletonPlan {
 	if (existing !== undefined && !isPlainObject(existing)) {
-		throw new Error("config.json must contain a JSON object");
+		throw new Error("config.jsonl must contain a JSON object");
 	}
 	if (!isPlainObject(example)) {
-		throw new Error("config.json.example must contain a JSON object");
+		throw new Error("config.jsonl.example must contain a JSON object");
 	}
 	const config: JsonObject = { ...existing };
 	const added: string[] = [];

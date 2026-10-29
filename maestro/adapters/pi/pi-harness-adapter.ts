@@ -631,14 +631,14 @@ export class PiHarnessAdapter implements HarnessAdapter {
 		return handle;
 	}
 	/**
-	 * 校验本次派发的模型：只接受已由 config.json 解析出的候选，
+	 * 校验本次派发的模型：只接受已由 config.jsonl 解析出的候选，
 	 * 不读取父会话运行时、不读取角色 frontmatter、不回退。
 	 */
 	private runtimePlan(opts: SpawnOptions): ResolvedRuntimePlan {
 		const model = opts.runtime?.model;
 		if (!model) {
 			throw new Error(
-				"Pi launch requires a model configured in config.json (see docs/configuration.md)",
+				"Pi launch requires a model configured in config.jsonl (see docs/configuration.md)",
 			);
 		}
 		return resolveRuntimePlan(

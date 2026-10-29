@@ -9,7 +9,7 @@ are evidence, not shipped contracts, when a later ADR supersedes them.
 - [`../README.md`](../README.md) — installation, everyday use, and safety.
 - [`tools.md`](tools.md) — public tools, commands, parameters, and run
   lifecycle.
-- [`configuration.md`](configuration.md) — `config.json`, model entries,
+- [`configuration.md`](configuration.md) — `config.jsonl`, model entries,
   sidebar markers, supervision, and pane placement.
 - [`roles.md`](roles.md) — role discovery, authoring, tool access control, and
   role packs.
@@ -70,7 +70,7 @@ real implementations; in-memory fakes are conformance fixtures only.
 | [`0013`](adr/0013-pack-neutral-execution-host.md) | Accepted | Ship a pack-neutral execution host; roles and workflows move to optional packs, and `/iterate` and `/btw` are removed. |
 | [`0014`](adr/0014-operator-cancel-terminal-intent.md) | Accepted | Operator cancel records terminal intent before owned termination: no fallback, one confirmed cancelled result, unconfirmed runs stay live. |
 | [`0015`](adr/0015-report-opened-primary-workspace.md) | Accepted | Report, and never automatically close, a primary workspace that worktree creation opened. |
-| [`0016`](adr/0016-config-owned-model-routing.md) | Accepted | `config.json` is the only model source: no parent fallback, no role-frontmatter routing, no registry-driven selection, and no configuration means no launch. |
+| [`0016`](adr/0016-config-owned-model-routing.md) | Accepted | `config.jsonl` is the only model source: no parent fallback, no role-frontmatter routing, no registry-driven selection, and no configuration means no launch. |
 
 ## Historical material
 

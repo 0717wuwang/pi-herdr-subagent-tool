@@ -11,7 +11,7 @@ import {
 import { wrapPiModelRegistry } from "../maestro/adapters/pi/model-registry.ts";
 import type { ModelEntry } from "../maestro/core/config/model-config.ts";
 
-const CONFIG_PATH = "/home/user/.pi/agent/herdr-agents/config.json";
+const CONFIG_PATH = "/home/user/.pi/agent/herdr-agents/config.jsonl";
 
 const CATALOG: RoutingModel[] = [
 	{ provider: "fake", id: "first" },

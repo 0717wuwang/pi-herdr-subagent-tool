@@ -1,0 +1,82 @@
+# ============================================================================
+# pi-herdr-subagent-tool 配置示例（config.jsonl.example）
+# ----------------------------------------------------------------------------
+# 这是「完整配置模板」：包含全部配置段、每段说明、默认值与取值示例。
+#
+# 使用方式：
+#   1. 以本文件为参考，将需要的段写入你的持久配置文件
+#      $PI_CODING_AGENT_DIR/herdr-agents/config.jsonl
+#      （默认 ~/.pi/agent/herdr-agents/config.jsonl）
+#   2. 必改：把下方 models 注释模板复制为 config.jsonl 中的 models 段并填入
+#      你的真实 provider/model-id（见 models 段说明）。
+#   3. 运行 /reload 使配置生效。
+#
+# 格式说明：
+#   - 以 # 开头的行是注释，解析时被忽略；# 后可有缩进。
+#   - 其余内容是 JSON 对象（一个配置段）。简单段一行一个对象；
+#     复杂段可跨多行，以花括号配平为界。
+#   - 多个对象按顺序浅合并，后面的键覆盖前面的。
+#   - 注意：本文件可直接作为运行时 config.jsonl 使用（含 # 注释）；
+#     只需把 models 模板替换为你的真实模型即可。
+#     其余配置段均为可选，缺省取默认值。
+# ============================================================================
+
+# --- status：状态栏显示开关 ------------------------------------------------
+# enabled：是否在状态栏展示子代理运行状态。
+#   必须存在：config.json 缺少 status 段会被拒绝加载。
+#   默认 true。
+{"status": { "enabled": true }}
+
+# --- models：子代理模型配置（唯一模型来源） --------------------------------
+# 注意：models 是用户资产，示例不写活跃记录，只在此给出注释模板；
+#       config.jsonl 没有 models 段时，任何模型驱动的派发都会在创建任何
+#       Herdr 资源前失败。请把下方结构复制为 config.jsonl 的 models 段并填入真实值。
+#
+# default：没有 per-agent 条目时使用的默认模型链。
+# agents：按角色名（subagent({ agent })）覆盖 default 的链。
+# 模型条目结构：
+#   { "model": "provider/model-id", "thinking": "..." }
+#   - model：必须是精确的 "provider/model-id"，且该 provider 已配置认证；
+#            别名、前缀、部分名都是配置错误。
+#   - thinking：可选，off/minimal/low/medium/high/xhigh/max；
+#               缺省表示不指定思考级别（不推断、不钳制、不继承）。
+# 单条 = 单元素数组；数组 = 按序尝试的候选链（第一条可用者生效）。
+# 模板（示例值，请替换）：
+#   {
+#     "default": { "model": "your-provider/your-default-model", "thinking": "medium" },
+#     "agents": {
+#       "scout": { "model": "your-provider/your-fast-model" },
+#       "reviewer": [
+#         { "model": "your-provider/your-review-model", "thinking": "high" },
+#         { "model": "your-provider/your-backup-review-model" }
+#       ]
+#     }
+#   }
+
+# --- persistent：常驻专家上限 ----------------------------------------------
+# maxAgents：最多同时保留的常驻专家数。默认 3；达到上限时新的常驻派发
+#   在创建任何 Herdr 资源前被拒绝。正整数。
+{"persistent": { "maxAgents": 3 }}
+
+# --- supervision：监督传输与挂起告警 --------------------------------------
+# forcePolling：true 强制用旧的 1 秒轮询（关闭文件唤醒）；默认 false。
+# hangWarningMinutes：无进展告警预算（分钟），0 禁用；默认 15。非负整数。
+{"supervision": { "forcePolling": false, "hangWarningMinutes": 15 }}
+
+# --- panes：面板放置方式 ---------------------------------------------------
+# mode：默认 "grouped"；可选 "tab"（每个子代理一个新标签页）或 "split"（稳定父面板分屏）。
+# direction：默认 "right"；可选 "down"。用于 grouped / split。
+# maxPerTab：每个自有标签页的最大活跃面板数，默认 4；正整数；独立于 persistent.maxAgents。
+{"panes": { "mode": "grouped", "direction": "right", "maxPerTab": 4 }}
+
+# --- sidebar：委托子代理的侧边栏标记 --------------------------------------
+# enabled：true 时把委托子代理的面板标记给 Herdr 侧边栏插件（Focus 可隐藏）。
+#   默认 false。改动后需 /reload。
+{"sidebar": { "enabled": false }}
+
+# --- roles：角色配置（已弃用） --------------------------------------------
+# 注意：bundled 已弃用且无效（本包不内置角色），示例不写活跃记录，只给出说明。
+# 若你的 config.jsonl 里已有该键：true/false 均被接受但被忽略；建议移除。
+# 其余值或未知键是配置错误。
+# 模板（不推荐保留）：
+#   { "roles": { "bundled": false } }

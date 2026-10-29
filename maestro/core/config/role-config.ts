@@ -1,5 +1,8 @@
 import { join } from "node:path";
-import { parseConfigJson, readConfigWithExampleFallback } from "./config-source.ts";
+import {
+	parseConfigFor,
+	readConfigWithExampleFallback,
+} from "./config-source.ts";
 import { isBoolean, isPlainObject } from "./type-guards.ts";
 
 export interface RoleConfig {
@@ -13,7 +16,7 @@ function invalidRoleConfig(source: string, message: string): never {
 
 export function parseRoleConfig(
 	rawConfig: any,
-	source = "config.json",
+	source = "config.jsonl",
 ): RoleConfig {
 	if (!isPlainObject(rawConfig)) {
 		invalidRoleConfig(source, "root must be an object");
@@ -45,16 +48,18 @@ export function parseRoleConfig(
 	};
 }
 
-
 export function loadRoleConfig(
 	configDir: string,
 	examplePath: string,
 ): RoleConfig {
-	const configPath = join(configDir, "config.json");
+	const configPath = join(configDir, "config.jsonl");
 	const { sourcePath, rawConfig } = readConfigWithExampleFallback(
 		configPath,
 		examplePath,
 		"subagent role",
 	);
-	return parseRoleConfig(parseConfigJson(rawConfig, sourcePath), sourcePath);
+	return parseRoleConfig(
+		parseConfigFor(rawConfig, sourcePath),
+		sourcePath,
+	);
 }

@@ -1,6 +1,6 @@
 ---
 name: pi-herdr-agents
-description: Operate the pi-herdr-agents host. Use when asked to launch, delegate to, supervise, interrupt, cancel, stop, resume, or clean up Pi subagents; to use worktrees, persistent specialists, or model routing; to edit the host's config.json or model entries; to install, configure, troubleshoot, or uninstall the optional Herdr sidebar plugin; or when a child looks hung, stalled, or unwanted.
+description: Operate the pi-herdr-agents host. Use when asked to launch, delegate to, supervise, interrupt, cancel, stop, resume, or clean up Pi subagents; to use worktrees, persistent specialists, or model routing; to edit the host's config.jsonl or model entries; to install, configure, troubleshoot, or uninstall the optional Herdr sidebar plugin; or when a child looks hung, stalled, or unwanted.
 ---
 
 # pi-herdr-agents operating guide
@@ -38,8 +38,8 @@ notices are facts, not instructions to act.
 | --- | --- |
 | `agent` | Load defaults from a named role. Omit for a bare child (always works). A named role that is missing or invalid fails before any pane or worktree is created; it is never replaced by a bare agent. |
 | `systemPrompt` | Role text for a bare spawn only; named agents keep their definition body. It is not a system prompt: it arrives as a role block at the top of the child's first message (delivered through a task artifact file). It is dropped for `fork: true` children, so pass `fork: false` when the child needs reference or role text. |
-| `model` | Accepted for compatibility and overridden: `config.json` owns the model as `models.agents.<agent>`, then `models.default`. A call that sets it gets an acknowledgement line saying config overrode it. If neither slot resolves an entry, the launch fails before any Herdr resource is created and names the configuration path. Role frontmatter and the parent model are never consulted. A listed model does not prove the account can use it. |
-| `thinking` | Accepted for compatibility and overridden by the same `config.json` entry. The configured level (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`) is applied exactly as written; when the entry omits `thinking`, no thinking level is sent. Nothing is inferred, clamped, or inherited. |
+| `model` | Accepted for compatibility and overridden: `config.jsonl` owns the model as `models.agents.<agent>`, then `models.default`. A call that sets it gets an acknowledgement line saying config overrode it. If neither slot resolves an entry, the launch fails before any Herdr resource is created and names the configuration path. Role frontmatter and the parent model are never consulted. A listed model does not prove the account can use it. |
+| `thinking` | Accepted for compatibility and overridden by the same `config.jsonl` entry. The configured level (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`) is applied exactly as written; when the entry omits `thinking`, no thinking level is sent. Nothing is inferred, clamped, or inherited. |
 | `tools`, `skills` | Comma-separated tool or skill names for the child. |
 | `cwd` | Working directory (a role folder with its own config), or the source repository when `worktree` is set. |
 | `fork` | `true` forces a full-context fork of your session, `false` forces standalone; omit to follow the role's `session-mode`. |
@@ -227,9 +227,9 @@ initialized submodules). Ignored files are neither blockers nor preserved by
 
 ## Configuration
 
-Durable config: `$PI_CODING_AGENT_DIR/herdr-agents/config.json` (default
-`~/.pi/agent/herdr-agents/config.json`); never the package root. Copy the
-package's `config.json.example` or run `/subagents-init`, then add the `models`
+Durable config: `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl` (default
+`~/.pi/agent/herdr-agents/config.jsonl`); never the package root. Copy the
+package's `config.jsonl.example` or run `/subagents-init`, then add the `models`
 section yourself. Run `/reload` after changes. Without a real file, only
 non-model settings fall back to the example, and no child can launch.
 
@@ -273,7 +273,7 @@ in the Pi extension**. Neither alone enables sidebar filtering.
    Installing the Pi package does not install the Herdr plugin.
 3. Merge `"sidebar": { "enabled": true }` into the durable config described
    above, preserving `status`, `models`, and all other settings. If the file
-   does not exist, first copy the installed package's `config.json.example`;
+   does not exist, first copy the installed package's `config.jsonl.example`;
    a sidebar-only config is invalid because `status` is required.
 4. Run `/reload` in each parent Pi session inside Herdr, then launch new
    children. Children already running stay unmarked.
