@@ -1,6 +1,6 @@
 {
   "name": "pi-herdr-subagent-tool",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Asynchronous Pi subagents in Herdr, with optional isolated Git worktrees",
   "keywords": [
     "pi-package",
