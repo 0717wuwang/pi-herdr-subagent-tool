@@ -291,7 +291,10 @@ test("release workflow uses package.json identity and NPM_TOKEN publishing", asy
 	assert.match(pkg.scripts["test:integration"], /--experimental-strip-types/);
 	assert.match(workflow, /branches:\n\s+- main/);
 	assert.match(workflow, /paths:\n\s+- package\.json/);
-	assert.match(workflow, /concurrency:\n\s+group: pi-herdr-subagent-tool-release/);
+	assert.match(
+		workflow,
+		/concurrency:\n\s+group: pi-herdr-subagent-tool-release/,
+	);
 	assert.doesNotMatch(workflow, /id-token:\s*write/);
 	assert.match(workflow, /contents:\s*write/);
 	assert.match(workflow, /node-version:\s*26\.12\.1/);
