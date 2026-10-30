@@ -41,11 +41,11 @@ describe("sidebar config", () => {
 			writeFileSync(example, JSON.stringify({ status: { enabled: true } }));
 			assert.deepEqual(loadSidebarConfig(dir, example), { enabled: false });
 			writeFileSync(
-				join(dir, "config.json"),
+				join(dir, "config.jsonl"),
 				JSON.stringify({ sidebar: { enabled: true } }),
 			);
 			assert.deepEqual(loadSidebarConfig(dir, example), { enabled: true });
-			writeFileSync(join(dir, "config.json"), "{");
+			writeFileSync(join(dir, "config.jsonl"), "{");
 			assert.throws(() => loadSidebarConfig(dir, example), /Invalid JSON/);
 		} finally {
 			rmSync(dir, { recursive: true, force: true });

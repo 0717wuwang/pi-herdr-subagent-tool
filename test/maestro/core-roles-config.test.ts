@@ -115,7 +115,7 @@ test("Task17 all five config owners use only the explicit config directory and e
 	try {
 		const configDir = join(root, "explicit-durable-dir");
 		mkdirSync(configDir);
-		const configPath = join(configDir, "config.json");
+		const configPath = join(configDir, "config.jsonl");
 		const example = join(root, "explicit-example.json");
 		writeFileSync(
 			example,
@@ -128,7 +128,7 @@ test("Task17 all five config owners use only the explicit config directory and e
 			}),
 		);
 		writeFileSync(
-			join(root, "config.json"),
+			join(root, "config.jsonl"),
 			JSON.stringify({ models: { default: { model: "decoy/model" } } }),
 		);
 		assert.deepEqual(loadModelConfig(configDir), { agents: {} });
@@ -168,7 +168,7 @@ test("Task17 all five config owners use only the explicit config directory and e
 		for (const read of [loadModelConfig, ...fallbackReaders])
 			assert.throws(
 				() => read(configDir, example),
-				/root must be an? (JSON )?object/,
+				/each record must be a JSON object/,
 			);
 		writeFileSync(
 			configPath,

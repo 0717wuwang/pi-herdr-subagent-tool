@@ -207,7 +207,7 @@ jobs:
       - name: Publish package to npm
         if: steps.npm.outputs.published != 'true'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || '' }}
         run: |
           if [[ -z "${NODE_AUTH_TOKEN}" ]]; then
             echo "::error::NPM_TOKEN is not configured. Add it as a repository secret in GitHub Settings → Secrets and variables → Actions."

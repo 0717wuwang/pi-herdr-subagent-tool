@@ -11,6 +11,7 @@ import {
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 function extractStepRun(workflow: string, stepName: string): string {
 	const lines = workflow.split("\n");
@@ -209,7 +210,7 @@ globalThis.fetch = async (_url, options) => {
 					...process.env,
 					GITHUB_OUTPUT: output,
 					GITHUB_SHA: "a".repeat(40),
-					NODE_OPTIONS: `--import=${fetchStub}`,
+					NODE_OPTIONS: `--import=${pathToFileURL(fetchStub).href}`,
 					PACKAGE_NAME: "pi-herdr-subagent-tool",
 					REGISTRY_SCENARIO: scenario,
 					REGISTRY_URL: "https://registry.test/",
@@ -280,7 +281,7 @@ test("CI runs the local gates with the release workflow's pinned tools", async (
 	);
 });
 
-test("release workflow uses package.json identity and trusted publishing", async () => {
+test("release workflow uses package.json identity and NPM_TOKEN publishing", async () => {
 	const workflow = await readFile(".github/workflows/publish.yml", "utf8");
 	const pkg = JSON.parse(await readFile("package.json", "utf8"));
 
@@ -290,8 +291,8 @@ test("release workflow uses package.json identity and trusted publishing", async
 	assert.match(pkg.scripts["test:integration"], /--experimental-strip-types/);
 	assert.match(workflow, /branches:\n\s+- main/);
 	assert.match(workflow, /paths:\n\s+- package\.json/);
-	assert.match(workflow, /concurrency:\n\s+group: pi-herdr-agents-release/);
-	assert.match(workflow, /id-token:\s*write/);
+	assert.match(workflow, /concurrency:\n\s+group: pi-herdr-subagent-tool-release/);
+	assert.doesNotMatch(workflow, /id-token:\s*write/);
 	assert.match(workflow, /contents:\s*write/);
 	assert.match(workflow, /node-version:\s*26\.12\.1/);
 	assert.doesNotMatch(workflow, /npm install -g/);
@@ -318,7 +319,7 @@ test("release workflow uses package.json identity and trusted publishing", async
 	assert.match(workflow, /redirect: "error"/);
 	assert.match(workflow, /npm run lint/);
 	assert.match(workflow, /npm test/);
-	assert.match(workflow, /npm publish --access public --provenance/);
+	assert.match(workflow, /npm publish --access public/);
 	assert.match(workflow, /github\.ref == 'refs\/heads\/main'/);
 	assert.match(workflow, /gh release create "\$TAG"/);
 	assert.match(workflow, /--generate-notes/);
@@ -441,7 +442,7 @@ test("npm registry responses are structured and fail closed", async () => {
 	});
 });
 
-test("release workflow enforces bootstrap-only token and trusted publishing", async () => {
+test("release workflow publishes with NPM_TOKEN and fails closed", async () => {
 	const workflow = await readFile(".github/workflows/publish.yml", "utf8");
 	const guide = await readFile("RELEASING.md", "utf8");
 
@@ -449,15 +450,14 @@ test("release workflow enforces bootstrap-only token and trusted publishing", as
 		workflow,
 		/NODE_AUTH_TOKEN:\s*\$\{\{\s*secrets\.NPM_TOKEN\s*!=\s*''\s*&&\s*secrets\.NPM_TOKEN\s*\|\|\s*''\s*\}\}/,
 	);
-	assert.match(workflow, /PACKAGE_EXISTS/);
-	assert.match(workflow, /NPM_TOKEN is bootstrap-only/);
-	assert.match(workflow, /OIDC trusted publishing \(no NPM_TOKEN\)/);
-	assert.match(workflow, /unset NODE_AUTH_TOKEN/);
-	assert.match(workflow, /package does not exist/);
+	assert.match(workflow, /npm publish --access public/);
+	assert.match(workflow, /if \[\[ -z "\$\{NODE_AUTH_TOKEN\}" \]\]/);
+	assert.match(workflow, /NPM_TOKEN is not configured/);
+	assert.match(workflow, /exit 1/);
 
-	assert.match(guide, /workflow fails if `NPM_TOKEN` is still configured/);
+	assert.match(guide, /fails closed when `NPM_TOKEN` is absent/);
 	assert.match(guide, /other refs are rejected/);
-	assert.match(guide, /releases use npm trusted publishing \(OIDC\)/);
+	assert.match(guide, /Steady state: NPM_TOKEN publish/);
 });
 
 test("release workflow retries only exact-commit npm publishes", async () => {
