@@ -175,10 +175,7 @@ export function loadStatusConfig(
 		examplePath,
 		"subagent status",
 	);
-	return parseStatusConfig(
-		parseConfigFor(rawConfig, sourcePath),
-		sourcePath,
-	);
+	return parseStatusConfig(parseConfigFor(rawConfig, sourcePath), sourcePath);
 }
 
 export function formatElapsedDuration(ms: number): string {

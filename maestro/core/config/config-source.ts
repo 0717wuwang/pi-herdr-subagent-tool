@@ -112,7 +112,6 @@ function parseSingleJsonValue(text: string): any {
 	}
 }
 
-
 function splitJsonValues(text: string): string[] {
 	const records: string[] = [];
 	let current = "";

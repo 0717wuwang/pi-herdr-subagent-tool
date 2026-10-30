@@ -58,8 +58,5 @@ export function loadRoleConfig(
 		examplePath,
 		"subagent role",
 	);
-	return parseRoleConfig(
-		parseConfigFor(rawConfig, sourcePath),
-		sourcePath,
-	);
+	return parseRoleConfig(parseConfigFor(rawConfig, sourcePath), sourcePath);
 }

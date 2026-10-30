@@ -217,10 +217,8 @@ for (const backend of backends) {
 		function writeSidebarSetting(enabled: boolean) {
 			const configDir = join(env.dir, ".pi", "agent", "herdr-agents");
 			mkdirSync(configDir, { recursive: true });
-			const examplePath = new URL(
-				"../../config.jsonl.example",
-				import.meta.url,
-			).pathname;
+			const examplePath = new URL("../../config.jsonl.example", import.meta.url)
+				.pathname;
 			const example = parseConfigJsonl(
 				readFileSync(examplePath, "utf8"),
 				examplePath,

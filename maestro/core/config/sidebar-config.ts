@@ -52,8 +52,5 @@ export function loadSidebarConfig(
 			throw exampleError;
 		}
 	}
-	return parseSidebarConfig(
-		parseConfigFor(rawConfig, sourcePath),
-		sourcePath,
-	);
+	return parseSidebarConfig(parseConfigFor(rawConfig, sourcePath), sourcePath);
 }

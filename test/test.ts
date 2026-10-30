@@ -850,12 +850,12 @@ describe("host adapter migration", () => {
 					next,
 				);
 				assert.notEqual(f.runtime.session, first);
-			const expectedDiag =
-				process.platform === "win32"
-					? { mode: "polling(fallback)", watcherCount: 0 }
-					: { mode: "wake+batch", watcherCount: 1 };
-			assert.deepEqual(f.runtime.session.diagnostics(), expectedDiag);
-			assert.deepEqual(supervision.diagnostics(), expectedDiag);
+				const expectedDiag =
+					process.platform === "win32"
+						? { mode: "polling(fallback)", watcherCount: 0 }
+						: { mode: "wake+batch", watcherCount: 1 };
+				assert.deepEqual(f.runtime.session.diagnostics(), expectedDiag);
+				assert.deepEqual(supervision.diagnostics(), expectedDiag);
 				const second = f.runtime.session;
 				finishShutdown();
 				await quitting;
@@ -8292,7 +8292,7 @@ describe("worktree cleanup public surface", () => {
 			"execFileSync",
 			(file: string, args: string[], options: { cwd?: string }) => {
 				if (file === "where.exe") return ""; // Windows 定位 herdr；非测试关注点
-			effects.push([file, ...args]);
+				effects.push([file, ...args]);
 				if (file === "herdr" && args[0] === "worktree" && args[1] === "list") {
 					assert.deepEqual(args, ["worktree", "list", "--cwd", "/repo"]);
 					return JSON.stringify({
@@ -11701,14 +11701,15 @@ describe("subagents widget rendering", () => {
 });
 
 describe("herdr.ts", () => {
-	it(
-		"captures failed CLI stderr without leaking it to the parent terminal",
-		{ skip: process.platform === "win32" },
-		() => {
+	it("captures failed CLI stderr without leaking it to the parent terminal", {
+		skip: process.platform === "win32",
+	}, () => {
 		const dir = createTestDir();
 		try {
 			const herdrPath =
-				process.platform === "win32" ? join(dir, "herdr.cmd") : join(dir, "herdr");
+				process.platform === "win32"
+					? join(dir, "herdr.cmd")
+					: join(dir, "herdr");
 			const herdrScript =
 				process.platform === "win32"
 					? '@echo off\r\necho {"error":{"code":"server_not_running"}} 1>&2\r\nexit /b 1\r\n'

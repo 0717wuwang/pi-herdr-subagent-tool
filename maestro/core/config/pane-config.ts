@@ -105,10 +105,7 @@ export function loadPaneConfig(
 		examplePath,
 		"subagent pane",
 	);
-	return parsePaneConfig(
-		parseConfigFor(rawConfig, sourcePath),
-		sourcePath,
-	);
+	return parsePaneConfig(parseConfigFor(rawConfig, sourcePath), sourcePath);
 }
 
 export function createSubagentPaneFactory(

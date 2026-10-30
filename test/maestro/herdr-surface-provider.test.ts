@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { OPENED_PRIMARY_SNAPSHOT_TIMEOUT_MS } from "../../maestro/surfaces/herdr/herdr.ts";
 import { HerdrSurfaceProvider } from "../../maestro/surfaces/herdr/herdr-surface-provider.ts";
-import { __herdrTest__, startHerdrAgent } from "../../maestro/surfaces/herdr/herdr.ts";
+import {
+	__herdrTest__,
+	startHerdrAgent,
+} from "../../maestro/surfaces/herdr/herdr.ts";
 
 const paneConfig = {
 	mode: "grouped",
@@ -643,8 +646,7 @@ describe("HerdrSurfaceProvider", () => {
 			__herdrTest__.withMockHerdrExec(
 				(args) => {
 					calls.push(args);
-					if (args[0] === "agent" && args[1] === "--help")
-						return "  start  \n";
+					if (args[0] === "agent" && args[1] === "--help") return "  start  \n";
 					if (args[0] === "pane" && args[1] === "list") return paneList();
 					return json({ ok: true });
 				},
@@ -667,8 +669,7 @@ describe("HerdrSurfaceProvider", () => {
 		await __herdrTest__.withMockHerdrExec(
 			(args) => {
 				calls.push(args);
-				if (args[0] === "agent" && args[1] === "--help")
-					return "  start  \n";
+				if (args[0] === "agent" && args[1] === "--help") return "  start  \n";
 				if (args[0] === "pane" && args[1] === "list")
 					return paneList({
 						pane_id: "pane-a",
@@ -678,10 +679,7 @@ describe("HerdrSurfaceProvider", () => {
 				return json({ ok: true });
 			},
 			() =>
-				startHerdrAgent("pane-a", "agent-name", "pi", [
-					"--session",
-					"x.jsonl",
-				]),
+				startHerdrAgent("pane-a", "agent-name", "pi", ["--session", "x.jsonl"]),
 		);
 		assert.deepEqual(
 			calls.filter((c) => c[0] === "agent" && c[1] === "start"),
