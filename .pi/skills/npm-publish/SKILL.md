@@ -97,15 +97,15 @@ Do not bump `package.json` for documentation or implementation-only changes. A v
 }
 ```
 
-## CI NPM_TOKEN publish
+## CI trusted publishing
 
-After bootstrap, configure GitHub Actions with a repository secret:
+After bootstrap, configure GitHub Actions to publish with npm trusted publishing (OIDC) instead of a token:
 
-1. npmjs.com → Access Tokens → Generate New Token → **Automation**
-2. GitHub repo → Settings → Secrets and variables → Actions → New repository secret, name `NPM_TOKEN`
-3. Workflow publish step: `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}` and `npm publish --access public`
+1. npmjs.com → Access Tokens → **Trusted Publishing** → create a publisher for this repository and workflow
+2. Allow `npm publish` (configurations created after Sep 03 2026 default to `npm stage publish` only)
+3. `.github/workflows/publish.yml`: the publish job declares `id-token: write` and runs `npm publish --access public`
 
-CI needs `npm token create` for NPM_TOKEN (automation token).
+No `NPM_TOKEN` secret is needed. npm authenticates with the GitHub OIDC token.
 
 ## Pitfalls
 
@@ -113,5 +113,5 @@ CI needs `npm token create` for NPM_TOKEN (automation token).
 2. **Sensitive files** — always `npm pack --dry-run`
 3. **Name taken** — add scope: `@yourname/tool-name`
 4. **Version immutable** — bump and republish; never republish same version
-5. **2FA in CI** — use automation token
+5. **2FA in CI** — use trusted publishing (OIDC); no long-lived token
 6. **Credentials committed** — never commit npm tokens, session artifacts, or local config

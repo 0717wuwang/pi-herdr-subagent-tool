@@ -56,7 +56,7 @@ jobs:
             # a first push must not release. Bootstrap via workflow_dispatch.
             if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
               release=false
-              echo "Initial branch creation (before SHA is all zeroes); no release. Bootstrap with workflow_dispatch after configuring the NPM_TOKEN secret."
+              echo "Initial branch creation (before SHA is all zeroes); no release. Bootstrap with workflow_dispatch after configuring npm trusted publishing."
             elif ! previous_version="$(git show "${BEFORE_SHA}:package.json" 2>/dev/null | node --input-type=module -e "let input=''; process.stdin.on('data', chunk => input += chunk); process.stdin.on('end', () => process.stdout.write(JSON.parse(input).version));")"; then
               release=false
               echo "Could not read package.json at ${BEFORE_SHA}; refusing to infer a release."
@@ -96,6 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
 
     steps:
       - name: Check out repository
@@ -202,18 +203,11 @@ jobs:
       - name: Verify package contents
         run: npm pack --dry-run
 
-      # Publishing uses a repository NPM_TOKEN secret (npm automation token).
-      # Configure NPM_TOKEN in GitHub Settings → Secrets and variables → Actions.
+      # Publishing uses npm trusted publishing (OIDC): the release job declares
+      # id-token: write so GitHub mints the OIDC token npm uses to authenticate.
       - name: Publish package to npm
         if: steps.npm.outputs.published != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || '' }}
-        run: |
-          if [[ -z "${NODE_AUTH_TOKEN}" ]]; then
-            echo "::error::NPM_TOKEN is not configured. Add it as a repository secret in GitHub Settings → Secrets and variables → Actions."
-            exit 1
-          fi
-          npm publish --access public
+        run: npm publish --access public
 
       - name: Create and push tag
         shell: bash

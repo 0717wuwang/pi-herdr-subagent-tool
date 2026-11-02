@@ -55,16 +55,23 @@ Do not release from skipped Herdr tests. Confirm the package preview includes `R
 
 ## npm authentication
 
-### Steady state: NPM_TOKEN publish
+### Steady state: npm trusted publishing
 
-After the package exists on npm, releases use the repository `NPM_TOKEN` secret (npm automation token). No OIDC trusted publisher is required.
+After the package exists on npm, releases authenticate with npm **trusted publishing** (OIDC): GitHub supplies an OIDC token, and npm grants publish access without a long-lived token. No `NPM_TOKEN` secret is used.
 
-1. Create an **automation** token on [npmjs.com](https://www.npmjs.com/) → Access Tokens → Generate New Token → **Automation**. Automation tokens can publish from CI without interactive 2FA.
-2. Add it as a repository secret on GitHub: **Settings → Secrets and variables → Actions → New repository secret**, name `NPM_TOKEN`, value the token.
-3. Confirm `.github/workflows/publish.yml` publishes with `npm publish --access public` using `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}` (already set).
+The **Release** job declares `id-token: write` so GitHub mints the OIDC token, and the publish step runs `npm publish --access public` with no `NODE_AUTH_TOKEN` fallback.
 
-The publish step fails closed when `NPM_TOKEN` is absent, so a missing secret cannot silently fall back. Manual dispatch runs only from `main`; other refs are rejected.
+Configure the trusted publisher on npmjs.com → Access Tokens → **Trusted Publishing**. The settings must match exactly (case-sensitive, and cannot be changed after creation):
 
+1. Provider: GitHub Actions
+2. Repository: `0717wuwang/pi-herdr-subagent-tool`
+3. Workflow filename: `publish.yml`
+4. Environment: leave empty unless the job runs in a GitHub Environment
+5. Allowed actions: **select `npm publish`** — configurations created after Sep 03 2026 default to `npm stage publish` only, so direct publishing must be explicitly enabled
+
+`package.json`'s `repository.url` must exactly match the GitHub repository (`git+https://github.com/0717wuwang/pi-herdr-subagent-tool.git`), and the publish job must declare `id-token: write`. A new trusted publisher configuration must complete its first successful publish within 2 days or it expires.
+
+Manual dispatch runs only from `main`; other refs are rejected.
 ## Publish a release
 
 Choose the semantic version increment:
@@ -85,7 +92,7 @@ git push origin main
 
 The `npm version` hook regenerates `CHANGELOG.md` with `auto-changelog`. Use `npm run changelog` to regenerate it without changing the version.
 
-Replace `patch` with `minor` or `major` when appropriate. The push triggers the **Release** workflow, which installs dependencies, runs lint and unit tests, previews package contents, publishes to npm using the `NPM_TOKEN` secret, creates and pushes the version tag, and creates the GitHub Release.
+Replace `patch` with `minor` or `major` when appropriate. The push triggers the **Release** workflow, which installs dependencies, runs lint and unit tests, previews package contents, publishes to npm via trusted publishing (OIDC), creates and pushes the version tag, and creates the GitHub Release.
 
 You can rerun a failed or incomplete release from **Actions → Release → Run workflow**. If npm already has `PACKAGE_NAME@VERSION`, the workflow reads that version's `gitHead` and continues only when it matches `GITHUB_SHA` (exact-commit retry). A foreign publish fails before tag or GitHub Release creation. Existing tags are verified to point at the release commit. The workflow does not create a GitHub Release for a version that still needs publish and failed to publish.
 
@@ -112,8 +119,9 @@ The package should appear at <https://pi.dev/packages/pi-herdr-subagent-tool> af
 The workflow stops if the matching version tag already points to a different commit. Do not move or reuse release tags. Increment the package version and push a new release commit instead.
 
 ### npm rejects authentication
+### npm rejects authentication
 
-Confirm the `NPM_TOKEN` repository secret is set and is an npm automation token with publish rights for `pi-herdr-subagent-tool`. Regenerate it on npmjs.com if npm rejects the credential.
+Confirm the npm trusted publisher is configured for this repository and workflow with `npm publish` allowed, and that `.github/workflows/publish.yml` declares `id-token: write`. Re-create the trusted publisher on npmjs.com if npm rejects the credential.
 
 ### npm reports that the version already exists
 
@@ -121,7 +129,7 @@ If the published `gitHead` does not match this commit, the workflow fails before
 
 ### Initial branch creation did not release
 
-A clean repository's first push has `github.event.before` all zeroes. The workflow treats that as `release=false`. Bootstrap this workflow with **Actions → Release → Run workflow** from `main` after setting `NPM_TOKEN`.
+A clean repository's first push has `github.event.before` all zeroes. The workflow treats that as `release=false`. Bootstrap this workflow with **Actions → Release → Run workflow** from `main` after configuring the trusted publisher.
 
 ### The package is absent from pi.dev
 

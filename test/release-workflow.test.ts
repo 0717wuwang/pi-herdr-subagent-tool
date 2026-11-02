@@ -281,7 +281,7 @@ test("CI runs the local gates with the release workflow's pinned tools", async (
 	);
 });
 
-test("release workflow uses package.json identity and NPM_TOKEN publishing", async () => {
+test("release workflow uses package.json identity and trusted publishing", async () => {
 	const workflow = await readFile(".github/workflows/publish.yml", "utf8");
 	const pkg = JSON.parse(await readFile("package.json", "utf8"));
 
@@ -295,7 +295,7 @@ test("release workflow uses package.json identity and NPM_TOKEN publishing", asy
 		workflow,
 		/concurrency:\n\s+group: pi-herdr-subagent-tool-release/,
 	);
-	assert.doesNotMatch(workflow, /id-token:\s*write/);
+	assert.match(workflow, /id-token:\s*write/);
 	assert.match(workflow, /contents:\s*write/);
 	assert.match(workflow, /node-version:\s*26\.12\.1/);
 	assert.doesNotMatch(workflow, /npm install -g/);
@@ -445,22 +445,19 @@ test("npm registry responses are structured and fail closed", async () => {
 	});
 });
 
-test("release workflow publishes with NPM_TOKEN and fails closed", async () => {
+test("release workflow publishes with npm trusted publishing", async () => {
 	const workflow = await readFile(".github/workflows/publish.yml", "utf8");
 	const guide = await readFile("RELEASING.md", "utf8");
 
-	assert.match(
-		workflow,
-		/NODE_AUTH_TOKEN:\s*\$\{\{\s*secrets\.NPM_TOKEN\s*!=\s*''\s*&&\s*secrets\.NPM_TOKEN\s*\|\|\s*''\s*\}\}/,
-	);
+	assert.match(workflow, /id-token:\s*write/);
 	assert.match(workflow, /npm publish --access public/);
-	assert.match(workflow, /if \[\[ -z "\$\{NODE_AUTH_TOKEN\}" \]\]/);
-	assert.match(workflow, /NPM_TOKEN is not configured/);
-	assert.match(workflow, /exit 1/);
+	assert.doesNotMatch(workflow, /secrets\.NPM_TOKEN/);
+	assert.doesNotMatch(workflow, /NODE_AUTH_TOKEN/);
+	assert.doesNotMatch(workflow, /NPM_TOKEN is not configured/);
 
-	assert.match(guide, /fails closed when `NPM_TOKEN` is absent/);
+	assert.match(guide, /trusted publishing|OIDC/);
 	assert.match(guide, /other refs are rejected/);
-	assert.match(guide, /Steady state: NPM_TOKEN publish/);
+	assert.doesNotMatch(guide, /fails closed when `NPM_TOKEN` is absent/);
 });
 
 test("release workflow retries only exact-commit npm publishes", async () => {
