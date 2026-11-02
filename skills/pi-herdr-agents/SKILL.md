@@ -38,7 +38,7 @@ notices are facts, not instructions to act.
 | --- | --- |
 | `agent` | Load defaults from a named role. Omit for a bare child (always works). A named role that is missing or invalid fails before any pane or worktree is created; it is never replaced by a bare agent. |
 | `systemPrompt` | Role text for a bare spawn only; named agents keep their definition body. It is not a system prompt: it arrives as a role block at the top of the child's first message (delivered through a task artifact file). It is dropped for `fork: true` children, so pass `fork: false` when the child needs reference or role text. |
-| `model` | Accepted for compatibility and overridden: `config.jsonl` owns the model as `models.agents.<agent>`, then `models.default`. A call that sets it gets an acknowledgement line saying config overrode it. If neither slot resolves an entry, the launch fails before any Herdr resource is created and names the configuration path. Role frontmatter and the parent model are never consulted. A listed model does not prove the account can use it. |
+| `model` | Accepted for compatibility and overridden: `config.jsonl` owns the model as `models.agents.<agent>`, then `models.default`. A call that sets it gets an acknowledgement line saying config overrode it. If neither slot resolves an entry, the child runs on the parent session's model and thinking level; only when that is also missing does the launch fail before any Herdr resource is created and name the configuration path. Role frontmatter is never consulted, and a listed model does not prove the account can use it. |
 | `thinking` | Accepted for compatibility and overridden by the same `config.jsonl` entry. The configured level (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`) is applied exactly as written; when the entry omits `thinking`, no thinking level is sent. Nothing is inferred, clamped, or inherited. |
 | `tools`, `skills` | Comma-separated tool or skill names for the child. |
 | `cwd` | Working directory (a role folder with its own config), or the source repository when `worktree` is set. |
@@ -229,9 +229,11 @@ initialized submodules). Ignored files are neither blockers nor preserved by
 
 Durable config: `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl` (default
 `~/.pi/agent/herdr-agents/config.jsonl`); never the package root. Copy the
-package's `config.jsonl.example` or run `/subagents-init`, then add the `models`
+package's `config.jsonl.example` or run `/subagents-init` (writes that same commented
+template, safe to re-run), then add the `models`
 section yourself. Run `/reload` after changes. Without a real file, only
-non-model settings fall back to the example, and no child can launch.
+non-model settings fall back to the example; a child still launches on the parent
+session's model, and only a launch with no parent model fails.
 
 | Key | Purpose |
 | --- | --- |
@@ -248,7 +250,7 @@ either slot may hold an ordered array of entries. Values must be exact
 authenticated IDs, validated against the loaded registry and configured
 authentication before any Herdr resource exists. `thinking` is applied exactly
 as written and is never inferred, clamped, or inherited; omit it to send none.
-`/subagents-init` writes a models-free skeleton only: it never drafts, ranks, or
+`/subagents-init` writes the fully commented template only: it never drafts, ranks, or
 saves model choices. Configuring models is an operator decision.
 
 ## Optional Herdr sidebar plugin

@@ -33,7 +33,7 @@ This page is the detailed reference for the tools, commands, and run lifecycle o
 | -------------------------- | ------------------------------------ |
 | `/worktree <name> [task]`  | Continue this session in a new managed worktree (`/worktree list` lists them) |
 | `/subagent <agent> <task>` | Spawn a named agent directly (`/subagent list` lists available agents) |
-| `/subagents-init [preferences]` | Draft task-category model preferences from the live authenticated registry, with optional ranking preferences; a loaded approval extension can own the write |
+| `/subagents-init` | Write or refresh the fully commented `config.jsonl` template (all sections, defaults, and examples) without any model settings; existing values and comments are preserved |
 
 ## Async Subagent Flow
 
@@ -127,8 +127,8 @@ subagent({
 | `fork`                 | boolean | —              | Override the child session mode: `true` forces fork, `false` forces standalone. Omit to inherit the agent `session-mode` frontmatter |
 | `persistent`           | boolean | `false`        | Keep one specialist session alive for sequential tasks; follow-ups use `subagent_send` only       |
 | `interactive`          | boolean | derived        | Mark this spawn as interactive (don't wake the parent on stall/recovery). Defaults to the agent's `interactive` frontmatter, otherwise the inverse of `auto-exit`. |
-| `model`                | string  | overridden     | Accepted for compatibility and **overridden by `config.jsonl`**: `models.agents.<agent>` then `models.default`. The acknowledgement states the override. A request that resolves no configured entry fails before any Herdr resource exists |
-| `thinking`             | string  | overridden     | Accepted for compatibility and **overridden by the same `config.jsonl` entry**: the configured level is applied exactly, or none is sent when the entry omits it. Nothing is inferred, clamped, or inherited |
+| `model`                | string  | overridden     | Accepted for compatibility and **overridden by `config.jsonl`**: `models.agents.<agent>` then `models.default`. The acknowledgement states the override. When neither slot resolves, the child runs on the parent session's model |
+| `thinking`             | string  | overridden     | Accepted for compatibility and **overridden by the same `config.jsonl` entry**: the configured level is applied exactly, or none is sent when the entry omits it. Nothing is inferred, clamped, or inherited. The parent's level applies only through the whole-chain fallback |
 | `systemPrompt`         | string  | —              | Role text for a bare spawn, delivered as a role block at the top of the child's first message (not the system prompt); dropped for `fork: true` children. Named agents keep their definition body |
 | `skills`               | string  | —              | Comma-separated skill names                                                                       |
 | `tools`                | string  | —              | Comma-separated tool names                                                                        |

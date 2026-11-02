@@ -22,7 +22,11 @@ import {
 } from "node:fs";
 import { randomUUID } from "node:crypto";
 
-import type { RunCancellation, Task } from "../../maestro/core/types.ts";
+import type {
+	RunCancellation,
+	Task,
+	ThinkingLevel,
+} from "../../maestro/core/types.ts";
 import {
 	createDefaultRunSession,
 	observePiActivity,
@@ -57,7 +61,7 @@ import {
 	type ResolvedRuntimePlan,
 } from "../../maestro/core/routing.ts";
 import { wrapPiModelRegistry } from "./model-registry.ts";
-import { buildConfigSkeleton } from "../../maestro/core/config/config-skeleton.ts";
+import { renderConfigDocument } from "../../maestro/core/config/config-skeleton.ts";
 import {
 	loadModelConfig,
 	type ModelConfig,
@@ -1955,6 +1959,7 @@ function normalizePiAttempt(
 		};
 		cwd: string;
 		model?: { provider: string; id: string };
+		thinkingLevel?: ThinkingLevel;
 		modelRegistry: {
 			find(provider: string, modelId: string): any;
 			getAvailable?: () => any[];
@@ -2057,12 +2062,19 @@ function resolveSubagentRuntimePlans(
 	ctx: Parameters<typeof normalizePiAttempt>[1],
 ): ResolvedRuntimePlan[] {
 	// 角色存在性由 normalizeSubagentParams 校验；这里只按名字取配置链。
-	// 模型/思考级别唯一来源：config.jsonl。调用参数不再参与路由。
+	// config.jsonl 未配置时回退父会话模型+思考级别，保证派发不硬失败。
 	const configPath = getSubagentsConfigPath();
+	const parentModel = ctx.model
+		? {
+				model: `${ctx.model.provider}/${ctx.model.id}`,
+				thinking: ctx.thinkingLevel,
+			}
+		: undefined;
 	const chain = selectModelChain(
 		currentModelConfig(),
 		params.agent,
 		configPath,
+		parentModel,
 	);
 	return resolveRuntimePlans(chain, wrapPiModelRegistry(ctx.modelRegistry), {
 		configPath,
@@ -2081,6 +2093,8 @@ function launchSnapshot(
 			sessionId: ctx.sessionManager.getSessionId(),
 			sessionDir: ctx.sessionManager.getSessionDir(),
 			agentDir: getAgentConfigDir(),
+			model: ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined,
+			thinking: ctx.thinkingLevel,
 		},
 		modelConfig: currentModelConfig(),
 		modelConfigPath: getSubagentsConfigPath(),
@@ -3182,40 +3196,36 @@ export default function subagentsExtension(
 			},
 		});
 
-	// 只生成骨架：模型是用户资产，必须由用户写入 config.jsonl。
+	// 只生成带注释的模板：模型是用户资产，必须由用户写入 config.jsonl。
 	if (!process.env.PI_SUBAGENT_ID) {
 		pi.registerCommand("subagents-init", {
 			description:
-				"Create or update the herdr-agents config.jsonl skeleton without any model settings",
+				"Create or update the fully commented herdr-agents config.jsonl template without any model settings",
 			handler: async (_args, ctx) => {
 				const configPath = getSubagentsConfigPath();
 				try {
-					const example = parseConfigJsonl(
-						readFileSync(getSubagentsConfigExamplePath(), "utf8"),
-						getSubagentsConfigExamplePath(),
-					);
+					const examplePath = getSubagentsConfigExamplePath();
 					const existing = existsSync(configPath)
 						? parseConfigJsonl(readFileSync(configPath, "utf8"), configPath)
 						: undefined;
-					const plan = buildConfigSkeleton(existing, example);
-					mkdirSync(getSubagentsConfigDir(), { recursive: true });
-					writeFileSync(
-						configPath,
-						`${JSON.stringify(plan.config, null, 2)}\n`,
-						"utf8",
+					const plan = renderConfigDocument(
+						existing,
+						readFileSync(examplePath, "utf8"),
 					);
+					mkdirSync(getSubagentsConfigDir(), { recursive: true });
+					writeFileSync(configPath, plan.text, "utf8");
 					const added = plan.added.length
 						? ` Added sections: ${plan.added.join(", ")}.`
 						: "";
 					ctx.ui.notify(
-						`Wrote config skeleton to ${configPath}.${added} ` +
-							"No models are configured: set models.default (and models.agents per role) yourself; " +
-							"see docs/configuration.md for the full structure and an example. Reload required.",
+						`Wrote commented config template to ${configPath}.${added} ` +
+							"No models are configured: fill in the commented models template with real provider/model-id values; " +
+							"see docs/configuration.md for the full structure. Reload required.",
 						"info",
 					);
 				} catch (error) {
 					ctx.ui.notify(
-						`config skeleton not written: ${error instanceof Error ? error.message : String(error)}`,
+						`config template not written: ${error instanceof Error ? error.message : String(error)}`,
 						"error",
 					);
 				}

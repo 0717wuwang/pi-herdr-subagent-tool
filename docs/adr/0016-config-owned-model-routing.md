@@ -1,7 +1,12 @@
 # 0016 — Configuration-owned model routing
 
-- Status: Accepted
+- Status: Accepted; fallback clause amended by 0017
 - Date: 2026-10-28
+> Amended by [0017](0017-parent-session-model-fallback.md): the operator still
+> configures routing, but a launch with no usable configured chain now falls back
+> to the parent session's model and thinking level instead of hard-failing. The
+> "no fallback source exists" and "no configuration means no launch" clauses below
+> are narrowed accordingly.
 
 ## Context
 

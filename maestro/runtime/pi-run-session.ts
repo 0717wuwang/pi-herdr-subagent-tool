@@ -114,6 +114,10 @@ export interface PiLaunchSnapshot {
 		sessionId: string;
 		sessionDir: string;
 		agentDir?: string;
+		/** 父会话模型（provider/id），config.jsonl 未配置时的派发回退。 */
+		model?: string;
+		/** 父会话思考级别，随模型一起回退。 */
+		thinking?: ThinkingLevel;
 	};
 	/** 模型来源唯一：持久配置 config.jsonl 解析结果。 */
 	modelConfig?: ModelConfig;
@@ -438,7 +442,7 @@ interface PiSessionOwner {
 
 /**
  * 解析 config.jsonl 为该角色的候选链计划。派发与恢复都在创建任何资源之前调用它：
- * 未配置即抛错，整链不可用也抛错。
+ * 配置链不可用时回退父会话模型；两者都没有才抛错，整链不可用也抛错。
  */
 function configuredPlans(
 	snapshot: PiLaunchSnapshot,
@@ -447,12 +451,20 @@ function configuredPlans(
 ): ResolvedRuntimePlan[] {
 	const configPath = snapshot.modelConfigPath ?? "config.jsonl";
 	const modelConfig = snapshot.modelConfig;
-	if (!modelConfig) {
+	const parentModel = snapshot.parent.model
+		? { model: snapshot.parent.model, thinking: snapshot.parent.thinking }
+		: undefined;
+	if (!modelConfig && !parentModel) {
 		throw new ModelNotConfiguredError(
 			`No model configured for subagents in ${configPath}; configure models.default or models.agents.<name>. See docs/configuration.md.`,
 		);
 	}
-	const chain = selectModelChain(modelConfig, roleName, configPath);
+	const chain = selectModelChain(
+		modelConfig ?? { agents: {} },
+		roleName,
+		configPath,
+		parentModel,
+	);
 	return resolveRuntimePlans(chain, snapshot.modelRegistry, {
 		configPath,
 		worktree,

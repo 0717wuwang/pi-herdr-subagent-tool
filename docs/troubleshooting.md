@@ -28,15 +28,17 @@ Subagent tabs, panes, and worktree workspaces are created without stealing keybo
 The widget shows `stalled` when pane inspection fails or the pane disappears without a completion record. Time alone never makes a run stalled. A no-progress advisory warns once per episode and never interrupts, kills, retries, or restarts a child. Interrupt the child with `subagent_interrupt`, end an ordinary run with `subagent_cancel`, or stop a persistent specialist with `subagent_stop`. See [In-progress status updates](tools.md#in-progress-status-updates) and [Supervision transport](configuration.md#supervision-transport).
 
 ## No model is configured
-A launch that needs a model fails before any Herdr workspace, tab, pane, or
-worktree exists. The message names the configuration path and the reason (no
-`models` section, an empty one, or no `default` and no `agents` entry for that
-role). Add the missing entry under `models.default` or `models.agents` in
-`$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`, then run `/reload`. A
-`/subagents-init` skeleton deliberately contains no `models` section, so a fresh
-skeleton never launches a child on its own. `subagent_stop`,
-`subagent_cancel`, and `subagent_interrupt` need no model and keep working, so an
-unconfigured host can still stop a running child.
+A configured chain that resolves no usable entry does not fail on its own: the
+child falls back to the parent session's model and thinking level. A launch fails
+before any Herdr workspace, tab, pane, or worktree exists only when that fallback
+is missing too, and the message then names the configuration path and the reason
+(no `models` section, an empty one, or no `default` and no `agents` entry for that
+role). To pin a role to its own model, add the entry under `models.default` or
+`models.agents` in `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`, then run
+`/reload`. A `/subagents-init` template deliberately keeps `models` commented
+out, so a fresh file launches children on the parent model until you configure
+one. `subagent_stop`, `subagent_cancel`, and `subagent_interrupt` need no model
+and keep working, so a host without any model can still stop a running child.
 
 ## A model fails
 A registry hit and configured authentication do not prove that your provider

@@ -70,7 +70,8 @@ real implementations; in-memory fakes are conformance fixtures only.
 | [`0013`](adr/0013-pack-neutral-execution-host.md) | Accepted | Ship a pack-neutral execution host; roles and workflows move to optional packs, and `/iterate` and `/btw` are removed. |
 | [`0014`](adr/0014-operator-cancel-terminal-intent.md) | Accepted | Operator cancel records terminal intent before owned termination: no fallback, one confirmed cancelled result, unconfirmed runs stay live. |
 | [`0015`](adr/0015-report-opened-primary-workspace.md) | Accepted | Report, and never automatically close, a primary workspace that worktree creation opened. |
-| [`0016`](adr/0016-config-owned-model-routing.md) | Accepted | `config.jsonl` is the only model source: no parent fallback, no role-frontmatter routing, no registry-driven selection, and no configuration means no launch. |
+| [`0016`](adr/0016-config-owned-model-routing.md) | Accepted; fallback amended by 0017 | `config.jsonl` owns model routing: no role-frontmatter routing and no registry-driven selection. |
+| [`0017`](adr/0017-parent-session-model-fallback.md) | Accepted | Fall back to the parent session's model and thinking level when no configured chain resolves, and still fail loudly when neither exists. |
 
 ## Historical material
 

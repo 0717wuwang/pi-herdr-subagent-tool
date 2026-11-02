@@ -144,7 +144,7 @@ Children get `caller_ping` to ask the parent for help. Interactive children also
 | --- | --- |
 | `/subagent <agent> <task>` | Launch a named role. `/subagent list` lists roles. |
 | `/worktree <name> [task]` | Continue this conversation in a new managed worktree. `/worktree list` and `/worktree remove <target>` manage them. |
-| `/subagents-init [preferences]` | Draft task-category model preferences from the live model registry. |
+| `/subagents-init` | Write the fully commented `config.jsonl` template to your config path, without any model settings. |
 | `/skill:pi-herdr-agents` | Load the host operating guide. |
 
 The main `subagent` parameters are `name`, `task`, `agent`, `model`, `thinking`, `fork`, `cwd`, `persistent`, `interactive`, and `worktree`. See [Parameters](docs/tools.md#parameters) for every parameter, and [Tools and lifecycle reference](docs/tools.md) for the full behavior of each tool. Live tool descriptions and these documents are authoritative. The `pi-herdr-agents` skill is a general operating guide.
@@ -179,7 +179,9 @@ ordered array of entries, and later entries are tried after a launch failure or
 a provider or agent error, never after a completed negative result. Persistent
 specialists do not advance after a running-child error. Worktrees use the first
 entry only and reject a longer chain. A catalog-listed model can still be
-rejected by your provider account at request time.
+rejected by your provider account at request time. When no configured slot resolves
+for a role, the child runs on the parent session's model and thinking level, so a
+fresh install delegates before you configure anything.
 
 Cross-family independent review requires a reviewer from a different model family
 than the author. For ordinary review, prefer a different authenticated model
@@ -190,8 +192,9 @@ verification must not use this fallback.
 
 Because `config.jsonl` owns both fields, `model` and `thinking` passed to
 `subagent` no longer take effect, and the acknowledgement says so. Run
-`/subagents-init` for a skeleton, then add the `models` section yourself and
-`/reload`. See [Models](docs/configuration.md#models),
+`/subagents-init` for the commented template and add the `models` section
+yourself; until you do, children run on the parent session's model. Run `/reload`
+after changes. See [Models](docs/configuration.md#models),
 [Model resolution details](docs/configuration.md#model-resolution-details), and
 [Troubleshooting unconfigured models](docs/troubleshooting.md#subagent-refuses-to-launch-because-no-model-is-configured).
 ## Control running children

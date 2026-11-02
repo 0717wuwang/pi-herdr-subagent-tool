@@ -10,8 +10,9 @@ The durable user configuration is `$PI_CODING_AGENT_DIR/herdr-agents/config.json
 defaulting to `~/.pi/agent/herdr-agents/config.jsonl`. It is not read from the
 installed package root, so npm and git package upgrades do not overwrite it.
 Create it by copying the installed package's `config.jsonl.example`, or run
-`/subagents-init` to seed the skeleton. Neither source contains model
-settings: the `models` section is yours to write.
+`/subagents-init`, which writes that same fully commented template to your
+config path. Either way the template never activates a model: the `models`
+section is yours to write.
 
 The shipped `config.jsonl.example` is a complete, commented template: every
 configuration section with its keys, defaults, and an example value. It can be
@@ -19,6 +20,18 @@ used directly as the runtime `config.jsonl` — comment lines (`#`) are ignored 
 the parser. Copy it, keep the sections you need (replace the `models` template
 with your real `provider/model-id`), and save the result as
 `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`.
+
+`/subagents-init` writes that template for you and is safe to re-run:
+
+- a fresh config receives the template verbatim, comments included;
+- an existing config keeps every value you already set — the template only
+  supplies sections that are missing;
+- `models` is never written as an active record. The template only carries a
+  commented `models` example, so your own `models` section (or the absence of
+  one) survives untouched at the end of the file.
+
+Re-run it after upgrading to pick up new configuration sections and their
+comments.
 
 ### Upgrading from `config.json`
 
@@ -49,19 +62,26 @@ Every other section is optional, and an absent key keeps its default.
 
 If `config.jsonl` is absent, status, role, pane, and persistent-specialist settings fall back to `config.jsonl.example`.
 Model selection never reads the example or any other file: only a real
-`config.jsonl` can supply a model, and without one every model-driven subagent
-call fails before any Herdr resource is created.
+`config.jsonl` can supply a configured model. When it supplies none for the
+role, the child runs on the parent session's model and thinking level, and a
+launch fails before any Herdr resource is created only when neither exists.
 
 `config.jsonl` is durable user state under the Pi agent directory and is loaded
 when the extension starts. Run `/reload` after changing it. Package-root
 `config.jsonl` files are ignored; move them manually or re-run `/subagents-init`.
 ## Models
 
-`config.jsonl` is the only model source. The extension ships no model list, no
-default provider, and no fallback to the session's parent model. It never reads
-role frontmatter, `config.jsonl.example`, another package's files, or the model
-registry to *choose* a model; the registry is used only to verify an exact
-configured ID and its configured authentication.
+`config.jsonl` is the only place a model is *chosen*. The extension ships no
+model list and no default provider. It never reads role frontmatter,
+`config.jsonl.example`, another package's files, or the model registry to
+*choose* a model; the registry is used only to verify an exact configured ID and
+its configured authentication. `model` and `thinking` passed to `subagent` are
+accepted for compatibility and then overridden.
+
+When no configured slot resolves for the role, the launch falls back to the
+parent session's model and thinking level as a last resort. That fallback is
+read from the session, never from the call arguments, and a configured chain
+still wins. See [ADR-0017](adr/0017-parent-session-model-fallback.md).
 
 `models.default` applies to every subagent that has no per-agent entry.
 `models.agents` overrides it per role name, keyed by the name passed to
@@ -91,22 +111,24 @@ Rules:
 - `thinking` is optional and accepts `off`, `minimal`, `low`, `medium`, `high`,
   `xhigh`, or `max`. It is applied verbatim. When it is absent the extension
   does not send a thinking level at all: nothing is inferred, clamped, checked
-  against model capabilities, or inherited from the parent.
+  against model capabilities or inherited from the parent. The parent's thinking
+  level is used only by the whole-chain fallback described above.
 - Because `config.jsonl` owns both fields, values passed to `subagent` as `model`
   or `thinking` do not take effect. The acknowledgement says so explicitly.
 - A single entry is exactly equivalent to a one-element array.
 
-The shipped `config.jsonl.example` is a commented template that documents the `models` structure; `/subagents-init` seeds a `config.jsonl` skeleton. Neither activates a model — add the `models` section yourself as shown above.
+The shipped `config.jsonl.example` is a commented template that documents the `models` structure; `/subagents-init` writes the same commented template to `config.jsonl`. Neither activates a model — the `models` block stays commented out, so add a real `models` section yourself as shown above.
 
-### Missing or unusable configuration fails before launch
+### Missing configuration fails before launch
 
 `subagent`, `subagent_resume`, and `subagent_send` need a model, so they fail
-before creating any Herdr workspace, tab, pane, worktree, or session file when:
+before creating any Herdr workspace, tab, pane, worktree, or session file when
+no usable model exists at all:
 
-- `config.jsonl` has no `models` section,
-- neither `models.agents[<role>]` nor `models.default` has an entry for the
-  role, or
-- no candidate in the resolved chain is usable.
+- `config.jsonl` has no `models` section, or neither `models.agents[<role>]` nor
+  `models.default` has an entry for the role,
+- no candidate in the resolved chain is usable, and
+- the launch has no parent session model to fall back to.
 
 The error names the absolute configuration path, the field that is missing, and
 the expected shape. `subagent_stop`, `subagent_cancel`, and

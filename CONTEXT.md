@@ -223,10 +223,11 @@ _Avoid_: Implicit commit, stash, discard
 **Model entry**:
 One `{ "model", "thinking"? }` object in `models.default` or
 `models.agents.<name>` of `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl`, the
-only model source. `thinking` is optional and applied exactly as written; when
+only place a model is configured. `thinking` is optional and applied exactly as written; when
 omitted, no thinking level is sent, and nothing is inferred, clamped, or
-inherited. The parent session's model, role frontmatter, and `subagent`
-arguments are not inputs; the acknowledgement reports that config overrode
+inherited. When no configuration slot resolves for a launch, the child runs on the
+parent session's model and thinking level; role frontmatter and `subagent`
+arguments are never inputs, and the acknowledgement reports that config overrode
 them. Cross-family independent review requires a reviewer from a different
 model family than the author. For ordinary review, prefer a different
 authenticated model family. When no other authenticated model family is
@@ -235,7 +236,7 @@ session. Disclose that this review is context-isolated, not cross-family
 independent. Cross-family verification must not use this fallback. Family is
 the independence boundary; project policy may separately require a different
 provider.
-_Avoid_: Default tier, parent fallback, frontmatter default, thinking inference
+_Avoid_: Default tier, frontmatter default, thinking inference
 
 **Candidate chain**:
 An ordered list of model entries in one configuration slot. Every candidate is
@@ -250,7 +251,9 @@ _Avoid_: Comma list, catalog search, automatic model discovery
 
 **Unconfigured model**:
 The state in which no configuration slot resolves a model entry for a launch
-request. It is a hard failure before workspace, tab, pane, worktree, or session
-creation, reported with the configuration file's absolute path and the expected
-shape. Stops, cancels, and interrupts need no model and stay available.
-_Avoid_: Parent-model inheritance, silent downgrade, post-launch failure
+request and the parent session supplies no model either. It is a hard failure
+before workspace, tab, pane, worktree, or session creation, reported with the
+configuration file's absolute path and the expected shape. A launch with no
+configured chain but a parent model is not unconfigured: it runs on the parent.
+Stops, cancels, and interrupts need no model and stay available.
+_Avoid_: Silent downgrade, post-launch failure

@@ -190,12 +190,14 @@ export function loadModelConfig(configDir: string): ModelConfig {
 
 /**
  * 选出该代理要使用的候选链：`models.agents.<name>` 优先，其次 `models.default`。
- * 都没有时硬失败——绝不回退父模型或其它文件中的模型信息。
+ * 都未配置时回退 `fallback`（父会话模型，通常来自 ctx.model / ctx.thinkingLevel）；
+ * 无 fallback 则硬失败——绝不臆测其它文件中的模型信息。
  */
 export function selectModelChain(
 	config: ModelConfig,
 	agentName: string | undefined,
 	configPath: string,
+	fallback?: ModelEntry,
 ): ModelChain {
 	const name = agentName?.trim();
 	if (name) {
@@ -207,9 +209,11 @@ export function selectModelChain(
 	}
 	// 同理：`default` 必须是配置里显式写入的键。
 	if (Object.hasOwn(config, "default")) {
-		const fallback = config.default;
-		if (fallback && fallback.length > 0) return fallback;
+		const defaultChain = config.default;
+		if (defaultChain && defaultChain.length > 0) return defaultChain;
 	}
+	// 配置未声明任何可用链：回退父会话模型，保证未配置也能派发子代理。
+	if (fallback) return [fallback];
 	const target = name
 		? `models.agents.${name} or models.default`
 		: "models.default";

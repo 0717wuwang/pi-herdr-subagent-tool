@@ -112,38 +112,100 @@ function parseSingleJsonValue(text: string): any {
 	}
 }
 
+/** JSONL 记录扫描状态：括号配平与字符串转义共同决定记录边界。 */
+interface RecordScanner {
+	inString: boolean;
+	escaped: boolean;
+	depth: number;
+	started: boolean;
+}
+
+function createRecordScanner(): RecordScanner {
+	return { inString: false, escaped: false, depth: 0, started: false };
+}
+
+/** 喂入一个字符并更新扫描状态。 */
+function advanceRecordScanner(state: RecordScanner, ch: string): void {
+	if (state.inString) {
+		if (state.escaped) state.escaped = false;
+		else if (ch === "\\") state.escaped = true;
+		else if (ch === '"') state.inString = false;
+		return;
+	}
+	if (ch === '"') state.inString = true;
+	else if (ch === "{" || ch === "[" || ch === "(") state.depth++;
+	else if (ch === "}" || ch === "]" || ch === ")") state.depth--;
+}
+
+/** 记录是否已配平收尾。 */
+function isRecordComplete(state: RecordScanner): boolean {
+	return state.started && !state.inString && state.depth === 0;
+}
+
 function splitJsonValues(text: string): string[] {
 	const records: string[] = [];
+	let state = createRecordScanner();
 	let current = "";
-	let inString = false;
-	let escaped = false;
-	let depth = 0;
-	let started = false;
 	for (const ch of text) {
-		if (!started) {
+		if (!state.started) {
 			if (/\s/.test(ch)) continue;
-			started = true;
+			state.started = true;
 		}
 		current += ch;
-		if (inString) {
-			if (escaped) escaped = false;
-			else if (ch === "\\") escaped = true;
-			else if (ch === '"') inString = false;
-			continue;
-		}
-		if (ch === '"') inString = true;
-		else if (ch === "{" || ch === "[" || ch === "(") depth++;
-		else if (ch === "}" || ch === "]" || ch === ")") depth--;
-		if (depth === 0 && started) {
+		advanceRecordScanner(state, ch);
+		if (isRecordComplete(state)) {
 			const record = current.trim();
 			if (record) records.push(record);
 			current = "";
-			started = false;
+			state = createRecordScanner();
 		}
 	}
 	const rest = current.trim();
 	if (rest) records.push(rest);
 	return records;
+}
+
+/** 模板片段：记录之前的注释/空行原样保留；纯注释尾段没有记录。 */
+export interface ConfigTemplateSegment {
+	prefix: string[];
+	record?: string;
+}
+
+/**
+ * 把带注释的模板拆成「注释块 + 活跃 JSON 记录」序列，
+ * 供生成配置时保留注释并按段替换取值。
+ */
+export function splitConfigTemplate(
+	rawConfig: string,
+): ConfigTemplateSegment[] {
+	const segments: ConfigTemplateSegment[] = [];
+	let prefix: string[] = [];
+	let state = createRecordScanner();
+	let current = "";
+	for (const line of rawConfig.split(/\r?\n/)) {
+		if (!state.started && current === "") {
+			const trimmed = line.trimStart();
+			if (trimmed === "" || trimmed.startsWith("#")) {
+				prefix.push(line);
+				continue;
+			}
+		}
+		for (const ch of line) {
+			state.started = true;
+			current += ch;
+			advanceRecordScanner(state, ch);
+			if (isRecordComplete(state)) {
+				segments.push({ prefix, record: current });
+				prefix = [];
+				current = "";
+				state = createRecordScanner();
+			}
+		}
+		if (current !== "") current += "\n";
+	}
+	if (current !== "") segments.push({ prefix, record: current.trimEnd() });
+	else if (prefix.length > 0) segments.push({ prefix });
+	return segments;
 }
 
 /**

@@ -85,7 +85,7 @@ import {
 	selectModelChain,
 	type ModelEntry,
 } from "../maestro/core/config/model-config.ts";
-import { buildConfigSkeleton } from "../maestro/core/config/config-skeleton.ts";
+import { renderConfigDocument } from "../maestro/core/config/config-skeleton.ts";
 import { parseConfigJsonl } from "../maestro/core/config/config-source.ts";
 import {
 	loadRoleConfig,
@@ -4686,31 +4686,73 @@ describe("model configuration", () => {
 		}
 	});
 
-	it("builds an init skeleton that never contains models", () => {
-		const example = {
-			status: { enabled: true },
-			models: { default: { model: "fake/a" } },
-			panes: { mode: "tab" },
-		};
-		const fresh = buildConfigSkeleton(undefined, example);
-		assert.deepEqual(fresh.config, {
-			status: { enabled: true },
-			panes: { mode: "tab" },
-		});
-		assert.deepEqual(fresh.added, ["status", "panes"]);
-
-		const existing = buildConfigSkeleton(
-			{ status: { enabled: false }, models: { default: [] } },
-			example,
+	it("falls back to the parent-session model when nothing is configured", () => {
+		const empty = parseModelConfig({});
+		const fallback = { model: "parent/sensenova", thinking: "high" as const };
+		assert.deepEqual(
+			selectModelChain(empty, "scout", "/cfg/config.jsonl", fallback),
+			[fallback],
 		);
-		assert.deepEqual(existing.config, {
-			status: { enabled: false },
-			models: { default: [] },
-			panes: { mode: "tab" },
+		assert.deepEqual(
+			selectModelChain(empty, undefined, "/cfg/config.jsonl", fallback),
+			[fallback],
+		);
+		// 已配置链优先于回退。
+		const config = parseModelConfig({
+			models: { default: { model: "fake/global" } },
 		});
-		assert.deepEqual(existing.added, ["panes"]);
+		assert.deepEqual(
+			selectModelChain(config, "scout", "/cfg/config.jsonl", fallback),
+			[{ model: "fake/global" }],
+		);
+		// 无回退仍硬失败。
+		assert.throws(
+			() => selectModelChain(empty, "scout", "/cfg/config.jsonl"),
+			ModelNotConfiguredError,
+		);
+	});
 
-		assert.throws(() => buildConfigSkeleton(["nope"], example), /JSON object/);
+	it("renders a commented config template that never activates models", () => {
+		const exampleRaw = [
+			"# 状态段说明",
+			'{"status": { "enabled": true }}',
+			"",
+			"# models 只给注释模板，不写活跃记录",
+			'#   { "default": { "model": "your-provider/your-default-model" } }',
+			"",
+			"# 面板段说明",
+			'{"panes": { "mode": "grouped", "direction": "right", "maxPerTab": 4 }}',
+		].join("\n");
+
+		const fresh = renderConfigDocument(undefined, exampleRaw);
+		assert.deepEqual(fresh.added, ["status", "panes"]);
+		assert.match(fresh.text, /^# 状态段说明$/m);
+		assert.match(fresh.text, /^# models 只给注释模板/m);
+		const parsedFresh = parseConfigJsonl(fresh.text, "/cfg/config.jsonl");
+		assert.deepEqual(parsedFresh, {
+			status: { enabled: true },
+			panes: { mode: "grouped", direction: "right", maxPerTab: 4 },
+		});
+		assert.equal(Object.hasOwn(parsedFresh, "models"), false);
+
+		// 现有取值替换模板默认值，注释与用户自己的 models 都保留。
+		const mine = {
+			status: { enabled: false },
+			models: { default: [{ model: "fake/mine" }] },
+		};
+		const rendered = renderConfigDocument(mine, exampleRaw);
+		assert.deepEqual(rendered.added, ["panes"]);
+		assert.match(rendered.text, /^# 状态段说明$/m);
+		assert.deepEqual(parseConfigJsonl(rendered.text, "/cfg/config.jsonl"), {
+			status: { enabled: false },
+			panes: { mode: "grouped", direction: "right", maxPerTab: 4 },
+			models: { default: [{ model: "fake/mine" }] },
+		});
+
+		assert.throws(
+			() => renderConfigDocument(["nope"], exampleRaw),
+			/JSON object/,
+		);
 	});
 });
 
@@ -7962,7 +8004,7 @@ describe("commands", () => {
 		]);
 	});
 
-	it("writes a models-free config skeleton and never touches user models", async () => {
+	it("writes a fully commented config template and never touches user models", async () => {
 		const dir = createTestDir();
 		const previous = process.env.PI_CODING_AGENT_DIR;
 		const notices: string[] = [];
@@ -7984,8 +8026,13 @@ describe("commands", () => {
 			};
 
 			await init.handler("", ctx);
-			const fresh = JSON.parse(readFileSync(configPath, "utf8"));
+			await init.handler("", ctx);
+			const firstText = readFileSync(configPath, "utf8");
+			assert.match(firstText, /^# ={10,}/m, "expected the template header");
+			assert.match(firstText, /# --- models：子代理模型配置/m);
+			const fresh = parseConfigJsonl(firstText, configPath);
 			assert.equal(Object.hasOwn(fresh, "models"), false);
+			assert.deepEqual(fresh.status, { enabled: true });
 			assert.deepEqual(fresh.panes, {
 				mode: "grouped",
 				direction: "right",
@@ -7994,14 +8041,18 @@ describe("commands", () => {
 			assert.match(notices[0], /No models are configured/);
 			assert.match(notices[0], /docs\/configuration\.md/);
 
-			// 用户配置的模型必须原样保留，骨架只补缺失段。
-			const mine = JSON.parse(JSON.stringify(fresh));
-			mine.models = { default: { model: "fake/mine" } };
-			mine.status = { enabled: false };
-			writeFileSync(configPath, `${JSON.stringify(mine, null, 2)}\n`);
+			// 用户配置的模型必须原样保留，模板只补缺失段并保留全部注释。
+			const withModels = {
+				...parseConfigJsonl(firstText, configPath),
+				models: { default: { model: "fake/mine" } },
+				status: { enabled: false },
+			};
+			writeFileSync(configPath, `${JSON.stringify(withModels, null, 2)}\n`);
 			notices.length = 0;
 			await init.handler("", ctx);
-			const merged = JSON.parse(readFileSync(configPath, "utf8"));
+			const secondText = readFileSync(configPath, "utf8");
+			assert.match(secondText, /# --- models：子代理模型配置/m);
+			const merged = parseConfigJsonl(secondText, configPath);
 			assert.deepEqual(merged.models, { default: { model: "fake/mine" } });
 			assert.deepEqual(merged.status, { enabled: false });
 			assert.deepEqual(merged.supervision, fresh.supervision);
