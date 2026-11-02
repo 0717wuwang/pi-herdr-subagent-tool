@@ -33,7 +33,7 @@ This page is the detailed reference for the tools, commands, and run lifecycle o
 | -------------------------- | ------------------------------------ |
 | `/worktree <name> [task]`  | Continue this session in a new managed worktree (`/worktree list` lists them) |
 | `/subagent <agent> <task>` | Spawn a named agent directly (`/subagent list` lists available agents) |
-| `/subagents-init` | Write or refresh the fully commented `config.jsonl` template (all sections, defaults, and examples) without any model settings; existing values and comments are preserved |
+| `/subagents-init` | Write or refresh the fully commented `config.jsonl` template (every section, default, and example) without any model settings; the old file is backed up to `config.jsonl.bak`, sections you already set keep your values, and everything after the `# --- 保留的现有配置` marker is preserved byte for byte |
 
 ## Async Subagent Flow
 
@@ -132,7 +132,7 @@ subagent({
 | `systemPrompt`         | string  | —              | Role text for a bare spawn, delivered as a role block at the top of the child's first message (not the system prompt); dropped for `fork: true` children. Named agents keep their definition body |
 | `skills`               | string  | —              | Comma-separated skill names                                                                       |
 | `tools`                | string  | —              | Comma-separated tool names                                                                        |
-| `cwd`                  | string  | —              | Working directory, or source repository when `worktree` is set (see [Role Folders](roles.md#role-folders)) |
+| `cwd`                  | string  | —              | Working directory, or source repository when `worktree` is set (see [Role Folders](roles.md#role-folders)). Relative values resolve against the launch base with platform path rules, so a Windows drive-letter path counts as absolute |
 | `worktree`             | object \| null | —          | Isolated Herdr-managed Git worktree; requires `branch`, with optional `base` (committed `HEAD` by default). Omit or pass `null` to use an ordinary pane in `cwd` when a client requires the property. |
 
 A bare spawn's `systemPrompt` is not passed to Pi as a system prompt. The host

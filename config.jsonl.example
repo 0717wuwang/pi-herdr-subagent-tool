@@ -4,11 +4,13 @@
 # 这是「完整配置模板」：包含全部配置段、每段说明、默认值与取值示例。
 #
 # 使用方式：
-#   1. 以本文件为参考，将需要的段写入你的持久配置文件
-#      $PI_CODING_AGENT_DIR/herdr-agents/config.jsonl
-#      （默认 ~/.pi/agent/herdr-agents/config.jsonl）
-#   2. 必改：把下方 models 注释模板复制为 config.jsonl 中的 models 段并填入
-#      你的真实 provider/model-id（见 models 段说明）。
+#   1. 直接运行 /subagents-init：它会先把已有文件备份为 config.jsonl.bak，
+#      再按本模板重写全部配置段，文末「保留区」逐字节保留，
+#      因此你手写的 models 与注释不会丢失。
+#      （路径：$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl
+#        默认 ~/.pi/agent/herdr-agents/config.jsonl）
+#   2. 必改：把下方 models 注释模板复制到保留区并填入你的真实
+#      provider/model-id（见 models 段说明）。
 #   3. 运行 /reload 使配置生效。
 #
 # 格式说明：
@@ -80,3 +82,11 @@
 # 其余值或未知键是配置错误。
 # 模板（不推荐保留）：
 #   { "roles": { "bundled": false } }
+
+# --- 保留区：模板不会改写的部分（生成时自动追加，示例见下） ------------------
+# /subagents-init 生成的 config.jsonl 末尾有一行固定的标记：
+#   # --- 保留的现有配置 --------------------------------------------------------
+# 标记以下的内容由你所有：刷新模板时逐字节复制，不做任何重新排版，
+# 你可以放心写注释、缩进与任意顺序的 JSON 对象。
+# 例如你自己的模型条目就写在这里（值需替换为真实 provider/model-id）：
+#   {"models": { "default": [{ "model": "your-provider/your-default-model", "thinking": "medium" }] }}

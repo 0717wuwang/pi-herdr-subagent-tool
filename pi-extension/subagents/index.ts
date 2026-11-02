@@ -3205,22 +3205,41 @@ export default function subagentsExtension(
 				const configPath = getSubagentsConfigPath();
 				try {
 					const examplePath = getSubagentsConfigExamplePath();
-					const existing = existsSync(configPath)
-						? parseConfigJsonl(readFileSync(configPath, "utf8"), configPath)
+					const currentRaw = existsSync(configPath)
+						? readFileSync(configPath, "utf8")
 						: undefined;
 					const plan = renderConfigDocument(
-						existing,
+						currentRaw === undefined
+							? undefined
+							: parseConfigJsonl(currentRaw, configPath),
 						readFileSync(examplePath, "utf8"),
+						currentRaw,
 					);
+					if (currentRaw === plan.text) {
+						ctx.ui.notify(
+							`${configPath} already matches the current template; nothing written.`,
+							"info",
+						);
+						return;
+					}
 					mkdirSync(getSubagentsConfigDir(), { recursive: true });
+					const backupPath =
+						currentRaw === undefined ? undefined : `${configPath}.bak`;
+					if (currentRaw !== undefined && backupPath !== undefined) {
+						writeFileSync(backupPath, currentRaw, "utf8");
+					}
 					writeFileSync(configPath, plan.text, "utf8");
 					const added = plan.added.length
-						? ` Added sections: ${plan.added.join(", ")}.`
+						? ` New keys: ${plan.added.join(", ")}.`
 						: "";
+					const backedUp =
+						backupPath === undefined
+							? ""
+							: ` Previous file backed up to ${backupPath}.`;
 					ctx.ui.notify(
-						`Wrote commented config template to ${configPath}.${added} ` +
-							"No models are configured: fill in the commented models template with real provider/model-id values; " +
-							"see docs/configuration.md for the full structure. Reload required.",
+						`Wrote commented config template to ${configPath}.${added}${backedUp} ` +
+							"Your own records (for example models) sit in the preserved block at the end of the file and were copied verbatim; " +
+							"if models are still missing, add real provider/model-id values there. Reload required.",
 						"info",
 					);
 				} catch (error) {

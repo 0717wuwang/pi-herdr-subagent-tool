@@ -10,6 +10,7 @@ import {
 import type { ResolvedRuntimePlan } from "../../core/routing.ts";
 import type { PaneConfig } from "../../core/config/pane-config.ts";
 import { isNonEmptyString } from "../../core/config/type-guards.ts";
+import { resolveAgainstCwd } from "../../core/fs-path.ts";
 import type {
 	SurfaceProvider,
 	WorktreeSurface,
@@ -475,9 +476,7 @@ function resolveLaunchRequest(request: FreshPiLaunchRequest): ResolvedLaunch {
 			? agentDir
 			: (request.parent.invocationCwd ?? request.parent.cwd);
 	const sourceCwd = rawCwd
-		? rawCwd.startsWith("/")
-			? rawCwd
-			: join(cwdBase, rawCwd)
+		? resolveAgainstCwd(rawCwd, cwdBase)
 		: request.parent.cwd;
 	const localAgentDir = rawCwd ? join(sourceCwd, ".pi", "agent") : null;
 	let sessionMode: SubagentSessionMode = request.behavior.sessionMode;

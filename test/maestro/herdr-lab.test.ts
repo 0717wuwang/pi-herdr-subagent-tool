@@ -366,7 +366,9 @@ describe("herdr lab start", () => {
 		},
 		{
 			name: "non-executable",
-			code: "EACCES",
+			// Windows cannot spawn a file without an executable and reports ENOENT
+			// where POSIX reports EACCES for a missing execute bit.
+			code: process.platform === "win32" ? "ENOENT" : "EACCES",
 			bin: (tmp: string) => {
 				const path = join(tmp, "herdr");
 				writeFileSync(path, "", { mode: 0o644 });

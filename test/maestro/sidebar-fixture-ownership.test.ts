@@ -19,6 +19,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
+import { samePath } from "../../maestro/core/fs-path.ts";
 import { setTimeout as delay } from "node:timers/promises";
 import {
 	acquireCanary,
@@ -353,7 +354,9 @@ function fakeHerdr(root: string) {
 				const path = /^worktree (.*)$/m.exec(block)?.[1] ?? "";
 				const branch = /^branch refs\/heads\/(.*)$/m.exec(block)?.[1];
 				const row: Row = { branch, path, is_linked_worktree: index > 0 };
-				const workspace = worktrees.get(path)?.workspace;
+				// Git prints forward slashes on Windows; the fixture keys native ones.
+				const held = [...worktrees].find(([key]) => samePath(key, path))?.[1];
+				const workspace = held?.workspace;
 				if (workspace && workspaces.get(workspace)?.open)
 					row.open_workspace_id = workspace;
 				return row;
@@ -516,7 +519,14 @@ describe("sidebar fixture foreign canary", () => {
 				residue: [],
 			});
 			assert.ok(
-				fake.calls.includes(`git worktree remove --force ${held.path}`),
+				fake.calls.some(
+					(call) =>
+						call.startsWith("git worktree remove --force ") &&
+						samePath(
+							call.slice("git worktree remove --force ".length),
+							held.path,
+						),
+				),
 			);
 			assert.ok(!fake.calls.some((c) => c.startsWith("worktree remove")));
 			assert.ok(!existsSync(held.path) && !existsSync(held.repo));

@@ -2,7 +2,7 @@
 import { createServer, type Server, type Socket } from "node:net";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { once } from "node:events";
 import {
 	isRecord,
@@ -35,12 +35,23 @@ export function replyError(code: string, message: string): FakeHerdrReply {
 		);
 }
 
+/**
+ * A name the platform binds and connects by path. Windows has no AF_UNIX, so
+ * Node bridges `listen(path)` through a named pipe and a filesystem path fails
+ * with EACCES; the pipe namespace carries the same per-fixture name instead.
+ */
+export function fakeSocketPath(dir: string): string {
+	return process.platform === "win32"
+		? `\\\\.\\pipe\\${basename(dir)}-herdr.sock`
+		: join(dir, "herdr.sock");
+}
+
 export async function withFakeHerdrSocket(
 	reply: FakeHerdrReply,
 	run: (socketPath: string, requests: ReceivedRequest[]) => Promise<void>,
 ): Promise<void> {
 	const dir = mkdtempSync(join(tmpdir(), "fake-herdr-"));
-	const socketPath = join(dir, "herdr.sock");
+	const socketPath = fakeSocketPath(dir);
 	const requests: ReceivedRequest[] = [];
 	const sockets = new Set<Socket>();
 	let connections = 0;

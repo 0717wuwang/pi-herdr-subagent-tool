@@ -850,10 +850,7 @@ describe("host adapter migration", () => {
 					next,
 				);
 				assert.notEqual(f.runtime.session, first);
-				const expectedDiag =
-					process.platform === "win32"
-						? { mode: "polling(fallback)", watcherCount: 0 }
-						: { mode: "wake+batch", watcherCount: 1 };
+				const expectedDiag = { mode: "wake+batch", watcherCount: 1 };
 				assert.deepEqual(f.runtime.session.diagnostics(), expectedDiag);
 				assert.deepEqual(supervision.diagnostics(), expectedDiag);
 				const second = f.runtime.session;
@@ -4754,6 +4751,47 @@ describe("model configuration", () => {
 			/JSON object/,
 		);
 	});
+	it("refreshes the template idempotently and carries the preserved block verbatim", () => {
+		const exampleRaw = [
+			"# 状态段说明",
+			'{"status": { "enabled": true }}',
+			"",
+			"# 侧边栏段说明",
+			'{"sidebar": { "enabled": false }}',
+		].join("\n");
+
+		const first = renderConfigDocument(
+			{
+				status: { enabled: false },
+				models: { default: [{ model: "fake/mine" }] },
+			},
+			exampleRaw,
+		);
+		assert.deepEqual(first.added, ["sidebar"]);
+		assert.match(first.text, /保留的现有配置/);
+
+		// 二次刷新逐字节沿用保留区，结果与上次完全一致：重复执行 init 不写盘。
+		const second = renderConfigDocument(
+			parseConfigJsonl(first.text, "/cfg/config.jsonl"),
+			exampleRaw,
+			first.text,
+		);
+		assert.equal(second.text, first.text);
+		assert.deepEqual(second.added, []);
+
+		// 保留区里的手写注释与记录原样保留，不被重新序列化改写。
+		const handEdited = `${first.text}\n# 我自己的注释\n{"models": {"default": [{"model": "fake/edited"}]}}`;
+		const third = renderConfigDocument(
+			parseConfigJsonl(handEdited, "/cfg/config.jsonl"),
+			exampleRaw,
+			handEdited,
+		);
+		// 渲染结果只在末尾补一个换行，保留区正文逐字节一致。
+		assert.equal(third.text, `${handEdited}\n`);
+		assert.deepEqual(parseConfigJsonl(third.text, "/cfg/config.jsonl").models, {
+			default: [{ model: "fake/edited" }],
+		});
+	});
 });
 
 describe("persistent specialist configuration", () => {
@@ -8038,8 +8076,8 @@ describe("commands", () => {
 				direction: "right",
 				maxPerTab: 4,
 			});
-			assert.match(notices[0], /No models are configured/);
-			assert.match(notices[0], /docs\/configuration\.md/);
+			assert.match(notices[0], /preserved block at the end of the file/);
+			assert.match(notices[0], /Reload required/);
 
 			// 用户配置的模型必须原样保留，模板只补缺失段并保留全部注释。
 			const withModels = {
@@ -8048,7 +8086,10 @@ describe("commands", () => {
 				status: { enabled: false },
 			};
 			writeFileSync(configPath, `${JSON.stringify(withModels, null, 2)}\n`);
+			const handWritten = `${JSON.stringify(withModels, null, 2)}\n`;
+			writeFileSync(configPath, handWritten);
 			notices.length = 0;
+
 			await init.handler("", ctx);
 			const secondText = readFileSync(configPath, "utf8");
 			assert.match(secondText, /# --- models：子代理模型配置/m);
@@ -8056,6 +8097,16 @@ describe("commands", () => {
 			assert.deepEqual(merged.models, { default: { model: "fake/mine" } });
 			assert.deepEqual(merged.status, { enabled: false });
 			assert.deepEqual(merged.supervision, fresh.supervision);
+			// 刷新前先留一份原文件快照，旧内容可恢复。
+			assert.equal(readFileSync(`${configPath}.bak`, "utf8"), handWritten);
+			assert.match(notices[0], /backed up to/);
+
+			// 第三次执行内容已一致：不写盘、不覆盖备份，只报告已是最新。
+			notices.length = 0;
+			await init.handler("", ctx);
+			assert.equal(readFileSync(configPath, "utf8"), secondText);
+			assert.equal(readFileSync(`${configPath}.bak`, "utf8"), handWritten);
+			assert.match(notices[0], /already matches the current template/);
 		} finally {
 			restoreEnvVar("PI_CODING_AGENT_DIR", previous);
 			rmSync(dir, { recursive: true, force: true });

@@ -107,7 +107,13 @@ function createLinkedGitFixture(root: string, principal: string) {
 	initializeGitRepository(principal);
 	writeFileSync(join(principal, "base.txt"), "base\n");
 	const principalSha = commitAll(principal, "base");
-	const linked = join(root, "linked source α\ncheckout");
+	// Win32 file names forbid control characters, so the POSIX-only newline case
+	// becomes a spaces-plus-unicode case that still stresses quoting.
+	const linkedName =
+		process.platform === "win32"
+			? "linked source α  checkout"
+			: "linked source α\ncheckout";
+	const linked = join(root, linkedName);
 	execFileSync(
 		"git",
 		["worktree", "add", "-q", "-b", "linked/source", linked, principalSha],

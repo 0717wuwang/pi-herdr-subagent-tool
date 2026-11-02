@@ -144,7 +144,7 @@ Children get `caller_ping` to ask the parent for help. Interactive children also
 | --- | --- |
 | `/subagent <agent> <task>` | Launch a named role. `/subagent list` lists roles. |
 | `/worktree <name> [task]` | Continue this conversation in a new managed worktree. `/worktree list` and `/worktree remove <target>` manage them. |
-| `/subagents-init` | Write the fully commented `config.jsonl` template to your config path, without any model settings. |
+| `/subagents-init` | Write or refresh the fully commented `config.jsonl` template (every section, default, and example) on your config path, without any model settings. The previous file is backed up to `config.jsonl.bak`. |
 | `/skill:pi-herdr-agents` | Load the host operating guide. |
 
 The main `subagent` parameters are `name`, `task`, `agent`, `model`, `thinking`, `fork`, `cwd`, `persistent`, `interactive`, and `worktree`. See [Parameters](docs/tools.md#parameters) for every parameter, and [Tools and lifecycle reference](docs/tools.md) for the full behavior of each tool. Live tool descriptions and these documents are authoritative. The `pi-herdr-agents` skill is a general operating guide.

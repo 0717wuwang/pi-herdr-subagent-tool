@@ -13,7 +13,16 @@ import {
 	unlinkSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import {
+	dirname,
+	isAbsolute,
+	join,
+	parse,
+	relative,
+	resolve,
+	sep,
+} from "node:path";
+import { normalizeFsPath, samePath } from "../core/fs-path.ts";
 import { isRecord, type JsonObject } from "../core/config/type-guards.ts";
 import type { SurfaceProvider } from "../core/surface-provider.ts";
 import type {
@@ -59,7 +68,7 @@ export function resolveWorktreeProvisionCwd(sourceCwd: string): string {
 			`Unable to identify the Git checkout for worktree provisioning from ${sourceCwd}: ${errorMessage(error)}`,
 		);
 	}
-	if (gitDir === commonDir) return sourceCwd;
+	if (samePath(gitDir, commonDir)) return sourceCwd;
 
 	try {
 		const output = execFileSync(
@@ -72,7 +81,7 @@ export function resolveWorktreeProvisionCwd(sourceCwd: string): string {
 			.find((record) => record.startsWith("worktree "))
 			?.slice("worktree ".length);
 		if (!principal) throw new Error("Git returned no principal worktree");
-		return principal;
+		return normalizeFsPath(principal);
 	} catch (error) {
 		throw new Error(
 			`Unable to determine the principal Git checkout for linked worktree ${sourceCwd}: ${errorMessage(error)}`,
@@ -239,9 +248,20 @@ function exists(path: string): boolean {
  * freezing the whole process.
  */
 function realpathWithoutOpening(path: string): string {
-	const parts = (from: string) => resolve(from).split(sep).filter(Boolean);
-	let pending = parts(path);
-	let resolved: string = sep;
+	// `resolve` keeps a Windows drive letter inside the root, so the root must
+	// stay glued to it instead of turning into the first path segment.
+	const split = (from: string) => {
+		const absolute = resolve(from);
+		const root = parse(absolute).root;
+		return {
+			root,
+			segments: absolute.slice(root.length).split(sep).filter(Boolean),
+		};
+	};
+	const start = split(path);
+	let pending = start.segments;
+	let resolved: string = start.root;
+	let root: string = start.root;
 	let links = 0;
 	while (pending.length) {
 		const next = join(resolved, pending.shift() ?? "");
@@ -257,8 +277,10 @@ function realpathWithoutOpening(path: string): string {
 			throw Object.assign(new Error(`Too many symbolic links: ${path}`), {
 				code: "ELOOP",
 			});
-		pending = [...parts(resolve(resolved, readlinkSync(next))), ...pending];
-		resolved = sep;
+		const target = split(resolve(resolved, readlinkSync(next)));
+		root = target.root;
+		pending = [...target.segments, ...pending];
+		resolved = root;
 	}
 	return resolved;
 }
@@ -345,7 +367,9 @@ async function inspectGit(
 	const record = records.find((fields) => {
 		if (!fields[0]?.startsWith("worktree ")) return false;
 		const registeredPath = fields[0].slice("worktree ".length);
-		return exists(registeredPath) && realpathSync(registeredPath) === path;
+		return (
+			exists(registeredPath) && samePath(realpathSync(registeredPath), path)
+		);
 	});
 	// rev-parse returns HEAD for a detached checkout, without treating a valid
 	// detached state as an inspection error. Only named refs may be preserved.
@@ -407,21 +431,27 @@ function processHolders(
 	idleShellPids = new Set<number>(),
 	procRoot = "/proc",
 	platform: NodeJS.Platform = process.platform,
+	// A caller-supplied platform keeps its own identity source, so Linux and
+	// Darwin inspection stays exercisable on a host without process uids.
+	uid: number | undefined = process.getuid?.(),
 ): HolderInspection {
 	const blockers: string[] = [];
 	const unreadable = new Set<string>();
 	const shellNames = new Set(["bash", "zsh", "fish", "sh", "dash"]);
 	const checkout =
 		platform === "linux" || platform === "darwin" ? realpathSync(path) : path;
-	if (!process.getuid) throw new Error("Process user identity unavailable");
-	const uid = process.getuid();
+	const platformWarnings: string[] = [];
 	if (platform === "linux") {
 		// Keep enumeration outside the per-process guard: total failure is a blocker.
 		const pids = readdirSync(procRoot).filter((name) => /^\d+$/.test(name));
 		if (!pids.length) throw new Error("Process enumeration returned no PIDs");
 		for (const pid of pids) {
 			try {
-				if (lstatSync(`${procRoot}/${pid}`).uid !== uid) continue;
+				if (
+					lstatSync(`${procRoot}/${pid}`).uid !==
+					(uid ?? lstatSync(procRoot).uid)
+				)
+					continue;
 				let command = "";
 				try {
 					command = readFileSync(`${procRoot}/${pid}/comm`, "utf8").trim();
@@ -473,6 +503,7 @@ function processHolders(
 			}
 		}
 	} else if (platform === "darwin") {
+		if (uid === undefined) throw new Error("Process user identity unavailable");
 		// A nonzero lsof exit is a global failure, even if partial stdout exists.
 		let output: string;
 		try {
@@ -512,11 +543,19 @@ function processHolders(
 				unreadable.add(pid);
 			}
 		}
+	} else if (platform === "win32") {
+		// Win32 exposes no per-process working directory without native calls. The
+		// OS stays the arbiter: `git worktree remove` refuses a held checkout, so a
+		// live holder surfaces as a failed removal instead of a silent delete.
+		platformWarnings.push(
+			"Process-level holder inspection is unavailable on Windows; a held checkout fails removal rather than being deleted.",
+		);
 	} else {
 		throw new Error(`Process inspection unsupported on ${platform}`);
 	}
 	const warnings = [
 		"Incomplete process coverage: same-user inspection is permission-limited; other-user processes are not inspected. A protected process could hold the checkout undetected.",
+		...platformWarnings,
 	];
 	if (unreadable.size)
 		warnings.push(

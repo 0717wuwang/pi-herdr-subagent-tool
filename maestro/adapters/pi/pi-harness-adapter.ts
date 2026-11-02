@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { resolveAgainstCwd } from "../../core/fs-path.ts";
 import { homedir } from "node:os";
 import type {
 	HarnessAdapter,
@@ -255,11 +256,7 @@ export class PiHarnessAdapter implements HarnessAdapter {
 				: (this.options.parent.invocationCwd ?? this.options.parent.cwd);
 		return this.track(
 			child,
-			rawCwd
-				? rawCwd.startsWith("/")
-					? rawCwd
-					: join(cwdBase, rawCwd)
-				: this.options.parent.cwd,
+			rawCwd ? resolveAgainstCwd(rawCwd, cwdBase) : this.options.parent.cwd,
 		);
 	}
 	async resume(opts: ResumeOptions): Promise<AgentHandle> {

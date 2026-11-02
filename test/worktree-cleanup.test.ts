@@ -29,6 +29,7 @@ import {
 	createWorktreeCleanupOperations as buildCleanupOperations,
 	__worktreeCleanupTest__,
 } from "../maestro/runtime/worktree-operations.ts";
+import { samePath } from "../maestro/core/fs-path.ts";
 import { HerdrSurfaceProvider } from "../maestro/surfaces/herdr/herdr-surface-provider.ts";
 
 const provider = new HerdrSurfaceProvider({
@@ -120,7 +121,7 @@ describe("cleanup process visibility policy", () => {
 							: "readFileSync";
 				const original: (...args: any[]) => any = fs[method];
 				const mocked = t.mock.method(fs, method, (...args: any[]) => {
-					if (String(args[0]) === denied)
+					if (samePath(String(args[0]), denied))
 						throw Object.assign(new Error("private error details"), {
 							code: "EACCES",
 						});
@@ -178,7 +179,7 @@ describe("cleanup process visibility policy", () => {
 		symlinkSync(dir, join(dir, "101", "cwd"));
 		const original: (...args: any[]) => any = fs.readFileSync;
 		const mocked = t.mock.method(fs, "readFileSync", (...args: any[]) => {
-			if (String(args[0]) === join(dir, "101", "comm"))
+			if (samePath(String(args[0]), join(dir, "101", "comm")))
 				throw Object.assign(new Error("denied"), { code: "EPERM" });
 			return original(...args);
 		});
@@ -206,7 +207,7 @@ describe("cleanup process visibility policy", () => {
 					"/unused",
 					new Set(),
 					"/missing-proc-root",
-					kind === "platform" ? "win32" : "linux",
+					kind === "platform" ? "aix" : "linux",
 				);
 			const result = await removeContainedWorktree(f.input);
 			assert.equal(result.status, "blocked");
@@ -350,6 +351,7 @@ n${link}
 				new Set(),
 				"/proc",
 				"darwin",
+				0,
 			);
 			assert.deepEqual(opened, []);
 			assert.deepEqual(result.blockers, [
@@ -391,7 +393,11 @@ n${link}
 				assert.equal(realpathWithoutOpening(path), fs.realpathSync(path));
 			for (const [name, code] of [
 				["missing", "ENOENT"],
-				["through-missing", "ENOENT"],
+				// Windows canonicalizes `..` before checking existence, so a link
+				// through a missing directory resolves there but throws on POSIX.
+				...(process.platform === "win32"
+					? []
+					: [["through-missing", "ENOENT"] as const]),
 				["loop-a", "ELOOP"],
 			]) {
 				assert.throws(() => fs.realpathSync(join(dir, name)), { code });
@@ -415,6 +421,7 @@ n${link}
 				new Set(),
 				"/proc",
 				"darwin",
+				0,
 			);
 			assert.match(result.warnings.join(), /101.*unreadable/);
 			assert.match(result.blockers.join(), /202.*holds/);
@@ -432,6 +439,7 @@ n${link}
 					new Set(),
 					"/proc",
 					"darwin",
+					0,
 				);
 			const refused = await removeContainedWorktree(f.input);
 			assert.equal(refused.status, "blocked");
@@ -465,7 +473,7 @@ describe("cleanup operating-system probes", () => {
 					join(
 						dir,
 						"ignored",
-						`${"x".repeat(220)}-${i}${i === 0 ? "\nfile" : ""}`,
+						`${"x".repeat(220)}-${i}${i === 0 && process.platform !== "win32" ? "\nfile" : ""}`,
 					),
 					"",
 				);

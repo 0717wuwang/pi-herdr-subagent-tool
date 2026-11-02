@@ -26,6 +26,8 @@ import {
 	type HerdrSocketReply,
 } from "../../maestro/surfaces/herdr/herdr-socket.ts";
 import type { JsonObject } from "../../maestro/core/config/type-guards.ts";
+// Herdr reports forward-slash paths on Windows, so ownership compares forms.
+import { normalizeFsPath, samePath } from "../../maestro/core/fs-path.ts";
 
 export const TOKEN = "piha_delegated_v1";
 
@@ -154,9 +156,9 @@ export function judgeWorktreeOwnership(
 		};
 	const [row] = rows;
 	const [record] = matching;
-	if (!row.is_linked_worktree || row.path === expected.repoRoot)
+	if (!row.is_linked_worktree || samePath(row.path, expected.repoRoot))
 		return { kind: "unknown", reason: `${row.path} is not a linked worktree` };
-	if (record.path !== undefined && record.path !== row.path)
+	if (record.path !== undefined && !samePath(record.path, row.path))
 		return {
 			kind: "unknown",
 			reason: `launch record path ${record.path} differs from ${row.path}`,
@@ -286,7 +288,7 @@ export function removeOwnedWorktree(
 		} catch {
 			// Not empty, or already gone.
 		}
-		return { kind: "removed", path: found.path };
+		return { kind: "removed", path: normalizeFsPath(found.path) };
 	} catch (error) {
 		return {
 			kind: "residue",

@@ -230,7 +230,7 @@ initialized submodules). Ignored files are neither blockers nor preserved by
 Durable config: `$PI_CODING_AGENT_DIR/herdr-agents/config.jsonl` (default
 `~/.pi/agent/herdr-agents/config.jsonl`); never the package root. Copy the
 package's `config.jsonl.example` or run `/subagents-init` (writes that same commented
-template, safe to re-run), then add the `models`
+template, safe to re-run, old file kept as `config.jsonl.bak`), then add the `models`
 section yourself. Run `/reload` after changes. Without a real file, only
 non-model settings fall back to the example; a child still launches on the parent
 session's model, and only a launch with no parent model fails.

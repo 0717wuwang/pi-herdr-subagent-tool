@@ -48,10 +48,16 @@ const ordinaryReviewClauses = [
 // such as orchestrate and plan belong to role packs.
 const hostSkills = ["pi-herdr-agents"];
 const hostSkillFiles = new Set(hostSkills.map((n) => `skills/${n}/SKILL.md`));
+// npm is a shell alias (`npm.cmd`) on Windows and Node refuses to spawn a
+// `.cmd` without a shell; these arguments carry no quoting, so a shell is safe.
+const npmOptions = {
+	encoding: "utf8",
+	shell: process.platform === "win32",
+};
 const packedManifest = JSON.parse(
 	execFileSync("npm", ["pack", "--dry-run", "--json"], {
 		cwd: root,
-		encoding: "utf8",
+		...npmOptions,
 	}),
 );
 // npm scripts receive the manifest keyed by package id, while a standalone
@@ -189,7 +195,7 @@ describe("pack-neutral package contents", () => {
 					["pack", "--dry-run", "--json", "--ignore-scripts"],
 					{
 						cwd: dir,
-						encoding: "utf8",
+						...npmOptions,
 					},
 				),
 			);

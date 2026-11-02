@@ -24,11 +24,16 @@ with your real `provider/model-id`), and save the result as
 `/subagents-init` writes that template for you and is safe to re-run:
 
 - a fresh config receives the template verbatim, comments included;
-- an existing config keeps every value you already set — the template only
-  supplies sections that are missing;
+- a refresh first copies the old file to `config.jsonl.bak`, then rewrites the
+  template sections: a section you already set keeps your values, and a section
+  the template documents but your file lacks takes the template's default;
+- everything after the `# --- 保留的现有配置` marker is copied byte for byte, so
+  hand-written records and comments in that region are never re-serialized;
 - `models` is never written as an active record. The template only carries a
   commented `models` example, so your own `models` section (or the absence of
-  one) survives untouched at the end of the file.
+  one) survives untouched in the preserved region;
+- a file that already matches the template is not rewritten — no write, and the
+  existing `config.jsonl.bak` is kept.
 
 Re-run it after upgrading to pick up new configuration sections and their
 comments.
@@ -252,6 +257,10 @@ unregistered. With no parked wait, the watches stay unreferenced and do not
 keep the process running. If the watcher
 or shared pane inspection becomes unavailable, supervision quietly returns to
 the legacy one-second polling cadence. No caller action is required.
+
+Wake-ups are registered on every platform: Windows used to fall back to the
+legacy cadence by default and now shares the same watcher transport, with the
+4.8-second batch reconcile still bounding a missed event.
 
 Set `supervision.forcePolling` to `true` in the durable user `config.jsonl` to
 disable wake-ups and use that legacy cadence deliberately. The setting is read

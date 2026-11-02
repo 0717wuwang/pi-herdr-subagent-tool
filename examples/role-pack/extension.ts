@@ -7,6 +7,8 @@ export default function rolePack(pi: ExtensionAPI) {
 	const unsubscribe = pi.events.on(
 		"pi-herdr-subagents:roles:discover:v1",
 		(request) => {
+			// SAFETY: the roles:discover event always carries this contract shape;
+			// docs/roles.md defines it and apiVersion is checked before any call.
 			const discovery = request as {
 				apiVersion: number;
 				register(path: string): void;
